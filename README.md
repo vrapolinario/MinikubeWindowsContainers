@@ -28,7 +28,7 @@ minikube start --driver=hyperv --hyperv-virtual-switch=$SwitchName --nodes=2 --c
 > [!NOTE]
 >The above will deploy a 2 node cluster. You can change to a single node by removing '--nodes=2'. If deploy a single node, the command below needs to be run on just that node.
 
-Next, we need to prepare the Linux nodes for Flannel CNI:
+Next, we need to prepare the Linux nodes for Windows-specicif Flannel CNI configuration:
 
 ```powershell
 minikube ssh
@@ -38,9 +38,34 @@ minikube ssh -n minikube-m02
 sudo sysctl net.bridge.bridge-nf-call-iptables=1
 exit
 ```
-Next, we will deploy Flannel CNI. For this project, I have configured the kube-flannel.yml with the appropriate settings:
+Next, we will update the Flannel CNI for Windows. For this project, I have configured the kube-flannel.yml file with the appropriate settings:
 
 ```powershell
-
+wget -Uri https://raw.githubusercontent.com/vrapolinario/MinikubeWindowsContainers/main/kube-flannel.yml -OutFile .\kube-flannel.yml
 kubectl apply -f kube-flannel.yml
+```
+
+Now we need to make sure the flannel deamon set is restarted to reflect the new Windows-specific configuration.
+
+```powershell
+kubectl get ds -A
+kubectl rollout restart ds kube-flannel-ds-amd64 -n kube-system
+kubectl get pods -A
+```
+
+Make sure the pod has terminated and the new one is running. All pods should show a running state at this point.
+
+### Creating a Windows node manually
+For Linux nodes, you don't need to manually deploy the VM and OS, because MiniKube takes care of creating a new VM, downloading the OS image, and deploying the image to the VM. For Windows this is not supported, so we will perform these steps manually.
+
+Let's start by creating a new VM:
+
+```powershell
+$VMName = 'minikube-m03'
+$SwitchName = Read-Host -Prompt "Please provide the name of the External Virtual Switch to be used (This should be the same Switch as the MiniKube VMs"
+New-VM -Name $VMName -Generation 1 -MemoryStartupBytes 6000MB -Path ${env:homepath}\.minikube\machines\ -NewVHDPath ${env:homepath}\.minikube\machines\$VMName\VHD.vhdx -NewVHDSizeBytes 127000MB -SwitchName $SwitchName
+Set-VM -Name $VMName -ProcessorCount 2 -AutomaticCheckpointsEnabled $false
+Set-VMProcessor -VMName $VMName -ExposeVirtualizationExtensions $true
+Set-VMDvdDrive -VMName $VMName -Path C:\ISO\en-us_windows_server_2022_updated_jan_2022_x64_dvd_f7ca3012.iso
+Start-VM -Name $VMName
 ```
