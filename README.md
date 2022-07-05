@@ -233,5 +233,33 @@ minikube       Ready      control-plane,master   88m   v1.23.3   192.168.0.104  
 minikube-m02   Ready      <none>                 87m   v1.23.3   192.168.0.105   <none>        Buildroot 2021.02.4              4.19.202         containerd://1.4.12
 minikube-m03   NotReady   <none>                 73s   v1.23.3   192.168.0.106   <none>        Windows Server 2022 Datacenter   10.0.20348.469   containerd://1.6.6
 ```
+You will notice the status of the Windows node it "NotReady". This is because the networking for this node is not properly configured yet.
 
-###
+### Configure Flannel and Kube-Proxy on the Windows node
+Now that the Windows node has joined the cluster, we can configure the networking settings as any Kubernetes cluster, by using kubectl. To get started, let's apply the Flannel Overlay configuration by leveraging the official tools from SIG-Windows:
+
+```powershell
+kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/sig-windows-tools/master/hostprocess/flannel/flanneld/flannel-overlay.yml
+```
+
+Now we need to configure kube-proxy. For the purpose of this project, I have configured the YAML file:
+```powershell
+wget https://raw.githubusercontent.com/vrapolinario/MinikubeWindowsContainers/main/kube-proxy.yml -OutFile .\kube-proxy.yml
+kubectl apply -f .\kube-proxy.yml
+```
+
+The commands above will result in two new pods being created under the kube-system namespace. You can check the progress of the deployment by running:
+```powershell
+kubectl get pods -A
+```
+
+You can now check the status of your Windows node by running the kubectl get nodes -o wide command again as above. The output now should show the Windows node as Ready:
+```powershell
+PS C:\GitHub\MiniKube Windows Containers> kubectl get nodes -o wide
+NAME           STATUS   ROLES                  AGE    VERSION   INTERNAL-IP     EXTERNAL-IP   OS-IMAGE                         KERNEL-VERSION   CONTAINER-RUNTIME
+minikube       Ready    control-plane,master   100m   v1.23.3   192.168.0.104   <none>        Buildroot 2021.02.4              4.19.202         containerd://1.4.12
+minikube-m02   Ready    <none>                 99m    v1.23.3   192.168.0.105   <none>        Buildroot 2021.02.4              4.19.202         containerd://1.4.12
+minikube-m03   Ready    <none>                 13m    v1.23.3   192.168.0.106   <none>        Windows Server 2022 Datacenter   10.0.20348.469   containerd://1.6.6
+```
+
+Congrats! Now your MiniKube Kubernetes cluster is ready receive a Windows container application.
