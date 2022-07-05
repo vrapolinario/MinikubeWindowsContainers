@@ -85,6 +85,7 @@ Once you're logged in, type 15 to exit the SCOnfig screen.
 With the VM created and OS installed, we can now move to configuring the Windows node for MiniKube. Let's start by changing the instance name and installing the Continers feature:
 
 ```powershell
+Set-SConfig -AutoLaunch $false
 Rename-Computer -NewName minikube-m03
 Install-WindowsFeature -Name containers
 Restart-Computer -Force
@@ -92,3 +93,145 @@ Restart-Computer -Force
 
 > Important: You can use a different name for this Windows instance. I'm keeping "minikube-m03" for consistency with the other nodes.
 
+Now let's download ContainerD:
+```powershell
+$Version="1.6.6"
+curl.exe -L https://github.com/containerd/containerd/releases/download/v$Version/containerd-$Version-windows-amd64.tar.gz -o containerd-windows-amd64.tar.gz
+tar.exe xvf .\containerd-windows-amd64.tar.gz
+```
+
+After downloading, let's configure ContainerD for Windows:
+```powershell
+Copy-Item -Path ".\bin\" -Destination "$Env:ProgramFiles\containerd" -Recurse -Force
+cd $Env:ProgramFiles\containerd\
+.\containerd.exe config default | Out-File config.toml -Encoding ascii
+notepad config.toml
+```
+
+The command above will copy the ContainerD binaries to the Program Files folder, and create a new config file. After that, Notepad will open so you can change some settings. You need to change the folling parameters:
+
+|Setting|Old value|New Value|
+|-------------|----------------|----------------|
+|bin_dir|"C:\\Program Files\\containerd\\cni\\bin"|"c:\\opt\\cni\\bin"|
+|conf_dir|"C:\\Program Files\\containerd\\cni\\conf"|"c:\\etc\\cni\\net.d\\"|
+
+Save the file and close Notepad. Now let's create the folders above and register (and start) the ContainerD service:
+
+```powershell
+mkdir c:\opt\cni\bin
+mkdir c:\etc\cni\net.d
+.\containerd.exe --register-service
+Start-Service containerd
+get-service containerd
+```
+
+The output of the command above should show the ContainerD service as Running.
+Now, let's install NNSM:
+```powershell
+mkdir c:\k
+$arch = "win64"
+curl.exe -L https://k8stestinfrabinaries.blob.core.windows.net/nssm-mirror/nssm-2.24.zip -o nssm.zip
+tar.exe C c:\k\ -xvf .\nssm.zip --strip-components 2 */$arch/*.exe
+```
+
+Now, let's install kubelet:
+```powershell
+$KubernetesVersion="v1.23.3"
+curl.exe -L https://dl.k8s.io/$KubernetesVersion/bin/windows/amd64/kubelet.exe -o c:\k\kubelet.exe
+
+@"
+# Start file needed to support kubeadm extra args
+`$FileContent = Get-Content -Path "/var/lib/kubelet/kubeadm-flags.env"
+`$kubeAdmArgs = `$FileContent.TrimStart(`'KUBELET_KUBEADM_ARGS=`').Trim(`'"`')
+
+`$args = "--cert-dir=`$env:SYSTEMDRIVE/var/lib/kubelet/pki",
+        "--config=`$env:SYSTEMDRIVE/var/lib/kubelet/config.yaml",
+        "--bootstrap-kubeconfig=`$env:SYSTEMDRIVE/etc/kubernetes/bootstrap-kubelet.conf",
+        "--kubeconfig=`$env:SYSTEMDRIVE/etc/kubernetes/kubelet.conf",
+        "--hostname-override=$(hostname)",
+        "--enable-debugging-handlers",
+        "--cgroups-per-qos=false",
+        "--enforce-node-allocatable=``"``"",
+        "--resolv-conf=``"``""
+
+`$kubeletCommandLine = "c:\k\kubelet.exe " + (`$args -join " ") + " `$kubeAdmArgs"
+Invoke-Expression `$kubeletCommandLine
+"@ | Set-Content -Path c:\k\Start-kubelet.ps1
+
+c:\k\nssm.exe install kubelet Powershell -ExecutionPolicy Bypass -NoProfile c:\k\Start-kubelet.ps1
+c:\k\nssm.exe set Kubelet AppStdout C:\k\kubelet.log
+c:\k\nssm.exe set Kubelet AppStderr C:\k\kubelet.err.log
+```
+
+The command above will download and install kubelet for Windows. However, notice the kubelet service will not start until a further stage on which we join the Windows node to the MiniKube Kubernetes cluster using kubeadm.
+Now we need to open the appropriate ports on Windows Firewall:
+```powershell
+New-NetFirewallRule -Name kubelet -DisplayName 'kubelet' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 10250
+```
+
+The next step is a hack for the Windows node to be able to find the master Linux node via its FQDN:
+```powershell
+notepad C:\Windows\System32\drivers\etc\hosts
+# Add the IP address and control-plane.minikube.internal to the Hosts file
+```
+
+You will need to append the IP address of the master node to the Hosts file on the Windows node.
+
+> You can find the IP address of the master Linux node by running the following command on your machine:
+>```powershell
+>minikube node list
+>```
+
+Your hosts file should look similar to this:
+![Hosts file configuration](./WS2022-Install03.png)
+
+Save the file and close Notepad.
+Now, let's download kubeadm:
+```powershell
+curl.exe -L https://dl.k8s.io/$KubernetesVersion/bin/windows/amd64/kubeadm.exe -o c:\k\kubeadm.exe
+cd c:\k
+```
+
+At this point, your Windows node is essentially ready to join the MiniKube Kubernetes cluster. However, you will need the join command from the Linux nodes to proceed.
+
+### Get the Join command for kubeadm
+To get the join command for kubeadm, run the following on your machine:
+
+```powershell
+minikube ssh
+cd /var/lib/minikube/binaries/v1.23.3/
+sudo ./kubeadm token create --print-join-command
+```
+
+Copy the output for the join command. You will need to append --cri-socket "npipe:////./pipe/containerd-containerd" to the command. On the Windows node, run the command provided on the previous step with the above setting for ContainerD. Your command will look like this:
+```powershell
+.\kubeadm.exe join control-plane.minikube.internal:8443 --token c3k6qb.zn7kjtq7l74m0zcz --discovery-token-ca-cert-hash sha256:8ceaf34a09e0e5cf4f82d523d3c9068e78d390b221d606dc6f1224400b164f6c --cri-socket "npipe:////./pipe/containerd-containerd"
+```
+
+> Important: An error at this stage is expected. MiniKube expects to find some files in a different folder than kubelet, so we need to fix that before the command succeed. Do not stop the command until it finishes.
+
+After getting the error from kubelet, run the following to fix it:
+```powershell
+mkdir c:\var\lib\minikube\certs
+Copy-Item C:\etc\kubernetes\pki\ca.crt -Destination C:\var\lib\Minikube\Certs
+Remove-Item C:\etc\kubernetes\pki\ca.crt
+```
+
+Now run the kubeadm join command again. This time, the command should succeed.
+
+### Validating node join
+To ensure your Windows node has properly joined the cluster, you can run the following on your machine:
+```powershell
+kubectl get nodes -o wide
+```
+
+The output of the command should show the Windows node along with the Linux nodes.
+```powershell
+PS C:\Users\viniap> kubectl get nodes -o wide
+NAME           STATUS     ROLES                  AGE   VERSION   INTERNAL-IP     EXTERNAL-IP   OS-IMAGE                         KERNEL-VERSION   CONTAINER-RUNTIME
+minikube       Ready      control-plane,master   88m   v1.23.3   192.168.0.104   <none>        Buildroot 2021.02.4              4.19.202         containerd://1.4.12
+minikube-m02   Ready      <none>                 87m   v1.23.3   192.168.0.105   <none>        Buildroot 2021.02.4              4.19.202         containerd://1.4.12
+minikube-m03   NotReady   <none>                 73s   v1.23.3   192.168.0.106   <none>        Windows Server 2022 Datacenter   10.0.20348.469   containerd://1.6.6
+```
+
+###
