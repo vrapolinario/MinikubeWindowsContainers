@@ -263,23 +263,3 @@ minikube-m03   Ready    <none>                 13m    v1.23.3   192.168.0.106   
 ```
 
 Congrats! Now your MiniKube Kubernetes cluster is ready receive a Windows container application.
-
-### Running a simple IIS container to validate deployment
-While you can at this point deploy your Windows application to the cluster, you can use this sample I have prepared to simply validate that Windows containers are running properly. The below deploys a simple Windows container to the Windows node and run the IIS base container image. No actual app is deployed, but you can validate IIS is up and running and accessible via browser.
-
-To deploy the pod and its service, you can run:
-```powershell
-kubectl apply -f https://raw.githubusercontent.com/vrapolinario/MinikubeWindowsContainers/main/IIS-Sample.yaml
-```
-
-The output will show the result of the deployment and service being configured. Keep in mind it will take a while for the Windows node to download the IIS image. You can follow the deployment process by running:
-```powershell
-kubectl get pods -w
-```
-
-The command above will keep monitoring/watching the pods and once the pod is sucessfully configured, its state will change from ContainerCreating to Running.
-Once the pod is running, you can run:
-```powershell
-kubectl 
-```
-
