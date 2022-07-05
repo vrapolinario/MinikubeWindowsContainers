@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: iis-sample
+  labels:
+    app: iis-sample
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: iis-sample
+      labels:
+        app: iis-sample
+    spec:
+      nodeSelector:
+        "kubernetes.io/os": windows
+      containers:
+      - name: iis-sample
+        image: mcr.microsoft.com/windows/servercore/iis:windowsservercore-ltsc2022
+        resources:
+          limits:
+            cpu: 1
+            memory: 800M
+          requests:
+            cpu: .1
+            memory: 300M
+        ports:
+          - containerPort: 80
+  selector:
+    matchLabels:
+      app: iis-sample
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: iis-sample
+spec:
+  type: LoadBalancer
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+    nodePort: 30000
+  selector:
+    app: iis-sample
