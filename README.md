@@ -14,6 +14,7 @@ To get started you'll need:
 - Windows 11 or 10 host with Hyper-V installed
 - An External Switch must be configured
 - MiniKube for Windows must be installed
+- An Evaluation install media (ISO file) for Windows Server 2022
 
 ### Creating and configuring a new MiniKube cluster
 
@@ -61,9 +62,33 @@ Let's start by creating a new VM:
 ```powershell
 $VMName = 'minikube-m03'
 $SwitchName = Read-Host -Prompt "Please provide the name of the External Virtual Switch to be used (This should be the same Switch as the MiniKube VMs"
+$ISOFile = Read-Host -Prompt "Please provide the full path for the Windows Server 2022 install media (ISO file)"
 New-VM -Name $VMName -Generation 1 -MemoryStartupBytes 6000MB -Path ${env:homepath}\.minikube\machines\ -NewVHDPath ${env:homepath}\.minikube\machines\$VMName\VHD.vhdx -NewVHDSizeBytes 127000MB -SwitchName $SwitchName
 Set-VM -Name $VMName -ProcessorCount 2 -AutomaticCheckpointsEnabled $false
 Set-VMProcessor -VMName $VMName -ExposeVirtualizationExtensions $true
-Set-VMDvdDrive -VMName $VMName -Path C:\ISO\en-us_windows_server_2022_updated_jan_2022_x64_dvd_f7ca3012.iso
+Set-VMDvdDrive -VMName $VMName -Path $ISOFile
 Start-VM -Name $VMName
 ```
+
+You will need to install Windows Server 2022 on the VM. Follow the installation wizard to Install a Server Core instance:
+![Windows Server 2022 Install](./WS2022-Install.png)
+
+After the installation is complete, you need to set up a new local admin password:
+![Set up new local admin password](./WS2022-Install02.png)
+
+Once you're logged in, type 15 to exit the SCOnfig screen.
+
+### Configuring the Windows node for MiniKube
+
+> Important: The commands in this section need to be run inside the Windows node.
+
+With the VM created and OS installed, we can now move to configuring the Windows node for MiniKube. Let's start by changing the instance name and installing the Continers feature:
+
+```powershell
+Rename-Computer -NewName minikube-m03
+Install-WindowsFeature -Name containers
+Restart-Computer -Force
+```
+
+> Important: You can use a different name for this Windows instance. I'm keeping "minikube-m03" for consistency with the other nodes.
+
