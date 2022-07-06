@@ -263,3 +263,22 @@ minikube-m03   Ready    <none>                 13m    v1.23.3   192.168.0.106   
 ```
 
 Congrats! Now your MiniKube Kubernetes cluster is ready receive a Windows container application.
+
+## Known issues
+
+As of July-6, the following are known issues:
+
+- While Windows containers will run fine in this prototype, there's a known networking issue. MiniKube exposes NodePort or LoadBalancer in a different way than regular Kubernetes. Since this prototype (as of this date) does not inform MiniKube of the new node, MiniKubeis unable to expose ports (and consequently the service) for the Windows node. There's currently an issue open and an ask for help to get this working on [GitHub](https://github.com/kubernetes/minikube/issues/2015#issuecomment-1175677726).
+
+## Clean up
+To clean up your environment, you can run the following:
+
+```powershell
+#Delete MiniKube cluster
+minikube delete --all
+#Remove VM
+$VMName = 'minikube-m03'
+Stop-VM -Name $VMName -TurnOff
+Remove-VM -Name $VMName -Force
+Remove-Item -Path ${env:homepath}\.minikube\machines\$VMName -Force -Recurse
+```
