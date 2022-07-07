@@ -126,7 +126,7 @@ get-service containerd
 ```
 
 The output of the command above should show the ContainerD service as Running.
-Now, let's install NNSM:
+Now, let's install NSSM:
 ```powershell
 mkdir c:\k
 $arch = "win64"
