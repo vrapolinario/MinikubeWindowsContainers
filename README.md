@@ -295,7 +295,7 @@ The above will execute the "dir" command inside the container and return the out
 
 As of July-6, the following are known issues:
 
-- While Windows containers will run fine in this prototype, there's a known networking issue. MiniKube exposes NodePort or LoadBalancer in a different way than regular Kubernetes. Since this prototype (as of this date) does not inform MiniKube of the new node, MiniKubeis unable to expose ports (and consequently the service) for the Windows node. There's currently an issue open and an ask for help to get this working on [GitHub](https://github.com/kubernetes/minikube/issues/2015#issuecomment-1175677726).
+- While Windows containers will run fine in this prototype, there's a known networking issue. MiniKube exposes NodePort or LoadBalancer in a different way than regular Kubernetes. Since this prototype (as of this date) does not inform MiniKube of the new node, MiniKube is unable to expose ports (and consequently the service) for the Windows node. There's currently an issue open and an ask for help to get this working on [GitHub](https://github.com/kubernetes/minikube/issues/2015#issuecomment-1175677726).
 - You mught see a "CrashLoopBackError" for the kube-proxy pod after applying the final configurations before it shows the status "Running". Since this pod uses host process containers to configure the host, waiting a few retries should work and the pod should show "Running" after a few attempts.
 - If you try to run a Windows container and it fails, you might need to update the Windows node. Open the VM and log in. Type "sconfig" on PowerShell and select option #6 to start Windows update.
 
