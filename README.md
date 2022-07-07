@@ -268,6 +268,29 @@ minikube-m03   Ready    <none>                 13m    v1.23.3   192.168.0.106   
 
 Congrats! Now your MiniKube Kubernetes cluster is ready receive a Windows container application.
 
+## Get a Windows container up and running
+Given the limitation explained in the next section, the example here simply brings up a new container with no exposed ports. The intent is to simply prove that a Windows container is running.
+
+To get a Server Core container running on your environment, you can run:
+
+```powershell
+wget https://raw.githubusercontent.com/vrapolinario/MinikubeWindowsContainers/main/IIS-Sample.yaml -OutFile .\IIS-Sample.yaml
+kubectl apply -f .\IIS-Sample.yaml
+```
+
+It will take a while for the image to download. You can check the status of the container by running:
+
+```powershell
+kubectl get pods
+```
+
+Once the container is in a "Running" state, you can interact with it:
+
+```powershell
+kubectl exec <pod-name> -- powershell dir
+```
+The above will execute the "dir" command inside the container and return the output.
+
 ## Known issues
 
 As of July-6, the following are known issues:
