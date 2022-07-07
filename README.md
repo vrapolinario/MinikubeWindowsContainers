@@ -112,8 +112,10 @@ The command above will copy the ContainerD binaries to the Program Files folder,
 
 |Setting|Old value|New Value|
 |-------------|----------------|----------------|
-|bin_dir|"C:\\Program Files\\containerd\\cni\\bin"|"c:\\opt\\cni\\bin"|
-|conf_dir|"C:\\Program Files\\containerd\\cni\\conf"|"c:\\etc\\cni\\net.d\\"|
+|bin_dir|"C:\\\Program Files\\\containerd\\\cni\\\bin"|"c:\\\opt\\\cni\\\bin"|
+|conf_dir|"C:\\\Program Files\\\containerd\\\cni\\\conf"|"c:\\\etc\\\cni\\\net.d\\\\"|
+
+
 
 Save the file and close Notepad. Now let's create the folders above and register (and start) the ContainerD service:
 
