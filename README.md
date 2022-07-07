@@ -11,10 +11,14 @@ The goal of this project is to implement a Windows node to a MiniKube cluster, w
 
 ## Requirements
 To get started you'll need:
-- Windows 11 or 10 host with Hyper-V installed
+- Windows 11 or 10 host with Hyper-V installed.
+  - Check out the documentation on how to install [Hyper-V on Windows](https://docs.microsoft.com/virtualization/hyper-v-on-windows/quick-start/enable-hyper-v).
 - An External Switch must be configured
+  - Check out the documentation on how to create a new [Hyper-V Switch](https://docs.microsoft.com/virtualization/hyper-v-on-windows/quick-start/connect-to-network).
 - MiniKube for Windows must be installed
+  - Check out the documentaiton on how to install [MiniKube on Windows](https://minikube.sigs.k8s.io/docs/start/)
 - An Evaluation install media (ISO file) for Windows Server 2022
+  - You can download an evaluarion media for Windows Server 2022 [here](https://info.microsoft.com/ww-landing-windows-server-2022.html).
 
 ### Creating and configuring a new MiniKube cluster
 
@@ -269,6 +273,7 @@ Congrats! Now your MiniKube Kubernetes cluster is ready receive a Windows contai
 As of July-6, the following are known issues:
 
 - While Windows containers will run fine in this prototype, there's a known networking issue. MiniKube exposes NodePort or LoadBalancer in a different way than regular Kubernetes. Since this prototype (as of this date) does not inform MiniKube of the new node, MiniKubeis unable to expose ports (and consequently the service) for the Windows node. There's currently an issue open and an ask for help to get this working on [GitHub](https://github.com/kubernetes/minikube/issues/2015#issuecomment-1175677726).
+- You mught see a "CrashLoopBackError" for the kube-proxy pod after applying the final configurations before it shows the status "Running". Since this pod uses host process containers to configure the host, waiting a few retries should work and the pod should show "Running" after a few attempts.
 
 ## Clean up
 To clean up your environment, you can run the following:
