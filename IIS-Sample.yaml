@@ -29,3 +29,17 @@ spec:
   selector:
     matchLabels:
       app: iis-sample
+
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: windows-service
+spec:
+  selector:
+    app: windowsservice
+  ports:
+    - port: 80
+  type: LoadBalancer

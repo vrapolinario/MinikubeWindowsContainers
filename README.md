@@ -103,7 +103,7 @@ Restart-Computer -Force
 Now let's download ContainerD:
 
 ```powershell
-$Version="1.6.6"
+$Version="1.7.3"
 curl.exe -L https://github.com/containerd/containerd/releases/download/v$Version/containerd-$Version-windows-amd64.tar.gz -o containerd-windows-amd64.tar.gz
 tar.exe xvf .\containerd-windows-amd64.tar.gz
 ```
@@ -117,7 +117,7 @@ cd $Env:ProgramFiles\containerd\
 notepad config.toml
 ```
 
-The command above will copy the ContainerD binaries to the Program Files folder, and create a new config file. After that, Notepad will open so you can change some settings. You need to change the folling parameters:
+The command above will copy the ContainerD binaries to the Program Files folder, and create a new config file. After that, Notepad will open so you can change some settings. You need to change the following parameters:
 
 |Setting|Old value|New Value|
 |-------------|----------------|----------------|
@@ -147,7 +147,7 @@ tar.exe C c:\k\ -xvf .\nssm.zip --strip-components 2 */$arch/*.exe
 Now, let's install kubelet:
 
 ```powershell
-$KubernetesVersion="v1.23.3"
+$KubernetesVersion="v1.27.3"
 curl.exe -L https://dl.k8s.io/$KubernetesVersion/bin/windows/amd64/kubelet.exe -o c:\k\kubelet.exe
 
 @"
@@ -215,7 +215,7 @@ To get the join command for kubeadm, run the following on your machine:
 
 ```powershell
 minikube ssh
-cd /var/lib/minikube/binaries/v1.23.3/
+cd /var/lib/minikube/binaries/v1.27.3/
 sudo ./kubeadm token create --print-join-command
 ```
 
@@ -250,9 +250,9 @@ The output of the command should show the Windows node along with the Linux node
 ```powershell
 PS C:\Users\viniap> kubectl get nodes -o wide
 NAME           STATUS     ROLES                  AGE   VERSION   INTERNAL-IP     EXTERNAL-IP   OS-IMAGE                         KERNEL-VERSION   CONTAINER-RUNTIME
-minikube       Ready      control-plane,master   88m   v1.23.3   192.168.0.104   <none>        Buildroot 2021.02.4              4.19.202         containerd://1.4.12
-minikube-m02   Ready      <none>                 87m   v1.23.3   192.168.0.105   <none>        Buildroot 2021.02.4              4.19.202         containerd://1.4.12
-minikube-m03   NotReady   <none>                 73s   v1.23.3   192.168.0.106   <none>        Windows Server 2022 Datacenter   10.0.20348.469   containerd://1.6.6
+minikube       Ready    control-plane   14s   v1.27.3   10.137.188.75    <none>        Buildroot 2021.02.12                        5.10.57          containerd://1.7.2
+minikube-m02   Ready    <none>          14s   v1.27.3   10.137.188.117   <none>        Buildroot 2021.02.12                        5.10.57          containerd://1.7.2
+minikube-m03   NotReady <none>          14s   v1.27.3   10.137.190.85    <none>        Windows Server 2022 Datacenter Evaluation   10.0.20348.587   containerd://1.7.3
 ```
 
 You will notice the status of the Windows node it "NotReady". This is because the networking for this node is not properly configured yet.
@@ -262,7 +262,8 @@ You will notice the status of the Windows node it "NotReady". This is because th
 Now that the Windows node has joined the cluster, we can configure the networking settings as any Kubernetes cluster, by using kubectl. To get started, let's apply the Flannel Overlay configuration by leveraging the official tools from SIG-Windows:
 
 ```powershell
-kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/sig-windows-tools/master/hostprocess/flannel/flanneld/flannel-overlay.yml
+wget https://raw.githubusercontent.com/vrapolinario/MinikubeWindowsContainers/main/flannel-overlay.yml -OutFile .\flannel-overlay.yml
+kubectl apply -f .\flannel-overlay.yml
 ```
 
 Now we need to configure kube-proxy. For the purpose of this project, I have configured the YAML file:
@@ -283,9 +284,9 @@ You can now check the status of your Windows node by running the kubectl get nod
 ```powershell
 PS C:\GitHub\MiniKube Windows Containers> kubectl get nodes -o wide
 NAME           STATUS   ROLES                  AGE    VERSION   INTERNAL-IP     EXTERNAL-IP   OS-IMAGE                         KERNEL-VERSION   CONTAINER-RUNTIME
-minikube       Ready    control-plane,master   100m   v1.23.3   192.168.0.104   <none>        Buildroot 2021.02.4              4.19.202         containerd://1.4.12
-minikube-m02   Ready    <none>                 99m    v1.23.3   192.168.0.105   <none>        Buildroot 2021.02.4              4.19.202         containerd://1.4.12
-minikube-m03   Ready    <none>                 13m    v1.23.3   192.168.0.106   <none>        Windows Server 2022 Datacenter   10.0.20348.469   containerd://1.6.6
+minikube       Ready    control-plane   54s   v1.27.3   10.137.188.75    <none>        Buildroot 2021.02.12                        5.10.57          containerd://1.7.2
+minikube-m02   Ready    <none>          54s   v1.27.3   10.137.188.117   <none>        Buildroot 2021.02.12                        5.10.57          containerd://1.7.2
+minikube-m03   Ready    <none>          54s   v1.27.3   10.137.190.85    <none>        Windows Server 2022 Datacenter Evaluation   10.0.20348.587   containerd://1.7.3
 ```
 
 Congrats! Now your MiniKube Kubernetes cluster is ready receive a Windows container application.
