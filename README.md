@@ -400,9 +400,13 @@ In the above output the EXTERNAL-IP is 10.107.41.1. To get to the IIS Windows Se
 ![IIS-Windows-Server](./IIS-Windows-Server.png)
 
 
-## Known issues
+## Release/Update notes
 
-As of July-6, the following are known issues:
+### September-19-2023
+
+- The issue with networking has been solved. You can now fully use Windows nodes and Windows containers with MiniKube.
+
+### July-6-2022:
 
 - While Windows containers will run fine in this prototype, there's a known networking issue. MiniKube exposes NodePort or LoadBalancer in a different way than regular Kubernetes. Since this prototype (as of this date) does not inform MiniKube of the new node, MiniKube is unable to expose ports (and consequently the service) for the Windows node. There's currently an issue open and an ask for help to get this working on [GitHub](https://github.com/kubernetes/minikube/issues/2015#issuecomment-1175677726).
 - You might see a "CrashLoopBackError" for the kube-proxy pod after applying the final configurations before it shows the status "Running". Since this pod uses host process containers to configure the host, waiting a few retries should work and the pod should show "Running" after a few attempts.
