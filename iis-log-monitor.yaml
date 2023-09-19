@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: iis-logmonitor 
+  labels:
+    app: iis-logmonitor 
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: iis-logmonitor
+      labels:
+        app: iis-logmonitor
+    spec:
+      nodeSelector:
+        "kubernetes.io/os": windows
+      containers:
+      - name: iis-logmonitor
+        image: sirasira/mink-iis-logmonitor:latest
+        resources:
+          limits:
+            cpu: 1
+            memory: 800M
+          requests:
+            cpu: .1
+            memory: 300M
+        ports:
+        - containerPort: 80
+        env:
+        - name: ASPNETCORE_URLS
+          value: http://*:80
+      os:
+        name: windows
+  selector:
+    matchLabels:
+      app: iis-logmonitor
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: iis-logmonitor
+spec:  
+  type: LoadBalancer
+  ports:
+  - port: 80
+  selector:
+    app: iis-logmonitor
