@@ -120,9 +120,9 @@ spec:
           # There is also a follow up issue on the flannel side: https://github.com/flannel-io/flannel/issues/1772
           # Once this issue is solved we should be able to remove the custom host and port to the kubernetes api server
         - name: KUBERNETES_SERVICE_HOST
-          value: "10.137.188.75" # replace with your KUBERNETES_SERVICE_HOST_VALUE
+          value: control-plane.minikube.internal # KUBERNETES_SERVICE_HOST_VALUE
         - name: KUBERNETES_SERVICE_PORT
-          value: "8443" # replace with your "KUBERNETES_SERVICE_PORT_VALUE"
+          value: "8443"
         - name: POD_NAME
           valueFrom:
             fieldRef:

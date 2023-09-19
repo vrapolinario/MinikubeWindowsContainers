@@ -43,11 +43,11 @@ sudo sysctl net.bridge.bridge-nf-call-iptables=1
 exit
 ```
 
-Next, we will update the Flannel CNI for Windows. For this project, I have configured the kube-flannel.yml file with the appropriate settings:
+Next, we will update the Flannel CNI for Windows. For this project, I have configured the kube-flannel.yaml file with the appropriate settings:
 
 ```powershell
-wget -Uri https://raw.githubusercontent.com/vrapolinario/MinikubeWindowsContainers/main/kube-flannel.yml -OutFile .\kube-flannel.yml
-kubectl apply -f kube-flannel.yml
+wget -Uri https://raw.githubusercontent.com/vrapolinario/MinikubeWindowsContainers/main/kube-flannel.yaml -OutFile .\kube-flannel.yaml
+kubectl apply -f kube-flannel.yaml
 ```
 
 Now we need to make sure the flannel daemon set is restarted to reflect the new Windows-specific configuration.
@@ -58,7 +58,22 @@ kubectl rollout restart ds kube-flannel-ds -n kube-flannel
 kubectl get pods -A
 ```
 
-Make sure the pod has terminated and the new one is running. All pods should show a running state at this point.
+Make sure the pod has terminated and the new one is running. All pods should show a running state at this point. The output of the command should show: 
+
+```powershell
+PS C:\minikube\v2> kubectl get pods -A
+NAMESPACE      NAME                               READY   STATUS    RESTARTS   AGE
+kube-flannel   kube-flannel-ds-6mjwl              1/1     Running   0          56s
+kube-flannel   kube-flannel-ds-9q9rf              1/1     Running   0          89s
+kube-system    coredns-5d78c9869d-46hpn           1/1     Running   0          149m 
+kube-system    etcd-minikube                      1/1     Running   0          149m
+kube-system    kube-apiserver-minikube            1/1     Running   0          149m 
+kube-system    kube-controller-manager-minikube   1/1     Running   0          149m 
+kube-system    kube-proxy-2gs29                   1/1     Running   0          148m
+kube-system    kube-proxy-bkmhw                   1/1     Running   0          149m
+kube-system    kube-scheduler-minikube            1/1     Running   0          149m
+kube-system    storage-provisioner                1/1     Running   0          149m
+```
 
 ### Creating a Windows node manually
 
@@ -262,31 +277,44 @@ You will notice the status of the Windows node it "NotReady". This is because th
 Now that the Windows node has joined the cluster, we can configure the networking settings as any Kubernetes cluster, by using kubectl. To get started, let's apply the Flannel Overlay configuration by leveraging the official tools from SIG-Windows:
 
 ```powershell
-wget https://raw.githubusercontent.com/vrapolinario/MinikubeWindowsContainers/main/flannel-overlay.yml -OutFile .\flannel-overlay.yml
-kubectl apply -f .\flannel-overlay.yml
+wget https://raw.githubusercontent.com/vrapolinario/MinikubeWindowsContainers/main/flannel-overlay.yaml -OutFile .\flannel-overlay.yaml
+kubectl apply -f .\flannel-overlay.yaml
 ```
 
 Now we need to configure kube-proxy. For the purpose of this project, I have configured the YAML file:
 
 ```powershell
-wget https://raw.githubusercontent.com/vrapolinario/MinikubeWindowsContainers/main/kube-proxy.yml -OutFile .\kube-proxy.yml
-kubectl apply -f .\kube-proxy.yml
+wget https://raw.githubusercontent.com/vrapolinario/MinikubeWindowsContainers/main/kube-proxy.yaml -OutFile .\kube-proxy.yaml
+kubectl apply -f .\kube-proxy.yaml
 ```
 
 The commands above will result in two new pods being created under the kube-system namespace. You can check the progress of the deployment by running:
 
 ```powershell
-kubectl get pods -A
+PS C:\minikube\v2> kubectl get pods -A
+NAMESPACE      NAME                                  READY   STATUS    RESTARTS       AGE 
+kube-flannel   kube-flannel-ds-6mjwl                 1/1     Running   0              3h7m
+kube-flannel   kube-flannel-ds-9q9rf                 1/1     Running   0              3h8m 
+kube-flannel   kube-flannel-ds-windows-amd64-psr5z   1/1     Running   0              4m42s
+kube-system    coredns-5d78c9869d-46hpn              1/1     Running   0              5h36m 
+kube-system    etcd-minikube                         1/1     Running   0              5h36m 
+kube-system    kube-apiserver-minikube               1/1     Running   0              5h36m 
+kube-system    kube-controller-manager-minikube      1/1     Running   0              5h36m
+kube-system    kube-proxy-2gs29                      1/1     Running   0              5h35m
+kube-system    kube-proxy-bkmhw                      1/1     Running   0              5h36m 
+kube-system    kube-proxy-windows-xbsk9              1/1     Running   1 (3m4s ago)   3m10s
+kube-system    kube-scheduler-minikube               1/1     Running   0              5h36m 
+kube-system    storage-provisioner                   1/1     Running   0              5h36m
 ```
 
 You can now check the status of your Windows node by running the kubectl get nodes -o wide command again as above. The output now should show the Windows node as Ready:
 
 ```powershell
-PS C:\GitHub\MiniKube Windows Containers> kubectl get nodes -o wide
-NAME           STATUS   ROLES                  AGE    VERSION   INTERNAL-IP     EXTERNAL-IP   OS-IMAGE                         KERNEL-VERSION   CONTAINER-RUNTIME
-minikube       Ready    control-plane   54s   v1.27.3   10.137.188.75    <none>        Buildroot 2021.02.12                        5.10.57          containerd://1.7.2
-minikube-m02   Ready    <none>          54s   v1.27.3   10.137.188.117   <none>        Buildroot 2021.02.12                        5.10.57          containerd://1.7.2
-minikube-m03   Ready    <none>          54s   v1.27.3   10.137.190.85    <none>        Windows Server 2022 Datacenter Evaluation   10.0.20348.587   containerd://1.7.3
+PS C:\minikube\v2> kubectl get nodes -o wide 
+NAME           STATUS   ROLES           AGE     VERSION   INTERNAL-IP      EXTERNAL-IP   OS-IMAGE                                    KERNEL-VERSION   CONTAINER-RUNTIME
+minikube       Ready    control-plane   5h42m   v1.27.3   10.137.188.75    <none>        Buildroot 2021.02.12                        5.10.57          containerd://1.7.2
+minikube-m02   Ready    <none>          5h41m   v1.27.3   10.137.188.93    <none>        Buildroot 2021.02.12                        5.10.57          containerd://1.7.2
+minikube-m03   Ready    <none>          25m     v1.27.3   10.137.188.106   <none>        Windows Server 2022 Datacenter Evaluation   10.0.20348.587   containerd://1.7.3
 ```
 
 Congrats! Now your MiniKube Kubernetes cluster is ready receive a Windows container application.
@@ -298,14 +326,33 @@ Given the limitation explained in the next section, the example here simply brin
 To get a Server Core container running on your environment, you can run:
 
 ```powershell
-wget https://raw.githubusercontent.com/vrapolinario/MinikubeWindowsContainers/main/IIS-Sample.yaml -OutFile .\IIS-Sample.yaml
-kubectl apply -f .\IIS-Sample.yaml
+wget https://raw.githubusercontent.com/vrapolinario/MinikubeWindowsContainers/main/iis-sample.yaml -OutFile .\iis-sample.yaml
+kubectl apply -f .\iis-sample.yaml
 ```
 
 It will take a while for the image to download. You can check the status of the container by running:
 
 ```powershell
-kubectl get pods
+ kubectl get pods 
+ ```
+
+Now the IIS pod should appear in the list of pods
+```powershell
+PS C:\minikube\v2> kubectl get pods -A
+NAMESPACE      NAME                                  READY   STATUS    RESTARTS       AGE 
+default        iis-sample-676cb9fdf4-hlg7d           1/1     Running   0              19m 
+kube-flannel   kube-flannel-ds-6mjwl                 1/1     Running   0              3h7m
+kube-flannel   kube-flannel-ds-9q9rf                 1/1     Running   0              3h8m 
+kube-flannel   kube-flannel-ds-windows-amd64-psr5z   1/1     Running   0              4m42s
+kube-system    coredns-5d78c9869d-46hpn              1/1     Running   0              5h36m 
+kube-system    etcd-minikube                         1/1     Running   0              5h36m 
+kube-system    kube-apiserver-minikube               1/1     Running   0              5h36m 
+kube-system    kube-controller-manager-minikube      1/1     Running   0              5h36m
+kube-system    kube-proxy-2gs29                      1/1     Running   0              5h35m
+kube-system    kube-proxy-bkmhw                      1/1     Running   0              5h36m 
+kube-system    kube-proxy-windows-xbsk9              1/1     Running   1 (3m4s ago)   3m10s
+kube-system    kube-scheduler-minikube               1/1     Running   0              5h36m 
+kube-system    storage-provisioner                   1/1     Running   0              5h36m
 ```
 
 Once the container is in a "Running" state, you can interact with it:
@@ -315,6 +362,36 @@ kubectl exec <pod-name> -- powershell dir
 ```
 
 The above will execute the "dir" command inside the container and return the output.
+
+```powershell
+PS C:\minikube\v2> kubectl exec iis-sample-676cb9fdf4-hlg7d -- powershell dir 
+
+    Directory: C:\
+
+Mode                 LastWriteTime         Length Name 
+----                 -------------         ------ ---- 
+d-----         9/18/2023   4:29 PM                dev 
+d-r---          9/1/2023  12:45 AM                Program Files
+d-----         8/31/2023   5:28 PM                Program Files (x86) 
+d-r---         8/31/2023   5:51 PM                Users 
+d-----         9/18/2023   4:29 PM                var 
+d-----         9/18/2023   4:31 PM                Windows 
+-a----          6/8/2023   5:46 AM           5647 License.txt
+-a----         9/12/2023  10:54 AM         168344 ServiceMonitor.exe 
+```
+
+Let us deploy a Windows Container to the cluster and monitor logs emitted to STDOUT using [LogMonitor](https://github.com/microsoft/windows-container-tools).
+
+```powershell
+wget https://raw.githubusercontent.com/vrapolinario/MinikubeWindowsContainers/main/iis-log-monitor.yaml -OutFile .\iis-log-monitor.yaml
+kubectl apply -f .\iis-log-monitor.yaml
+```
+
+Get the logs below using
+```powershell
+kubectl logs <pod-name>
+```
+![iis-logmonitor-5cfbfbf855-mxjm2 pod logs](./Windows-Node-Logs.png)
 
 ## Known issues
 
@@ -336,4 +413,6 @@ $VMName = 'minikube-m03'
 Stop-VM -Name $VMName -TurnOff
 Remove-VM -Name $VMName -Force
 Remove-Item -Path ${env:homepath}\.minikube\machines\$VMName -Force -Recurse
+#Remove External Virtual Switch
+Remove-VMSwitch $SwitchName
 ```
