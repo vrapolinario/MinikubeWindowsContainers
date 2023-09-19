@@ -321,13 +321,13 @@ Congrats! Now your MiniKube Kubernetes cluster is ready receive a Windows contai
 
 ## Get a Windows container up and running
 
-Given the limitation explained in the next section, the example here simply brings up a new container with no exposed ports. The intent is to simply prove that a Windows container is running.
+The example here simply brings up a new container with exposed ports. The intent is to simply prove that a Windows container is running.
 
-To get a Server Core container running on your environment, you can run:
+To get a Server Core container running on your environment with [LogMonitor](https://github.com/microsoft/windows-container-tools) as the entry process to monitor logs emitted to STDOUT, you can run:
 
 ```powershell
-wget https://raw.githubusercontent.com/vrapolinario/MinikubeWindowsContainers/main/iis-sample.yaml -OutFile .\iis-sample.yaml
-kubectl apply -f .\iis-sample.yaml
+wget https://raw.githubusercontent.com/vrapolinario/MinikubeWindowsContainers/main/iis-log-monitor.yaml -OutFile .\iis-log-monitor.yaml
+kubectl apply -f .\iis-log-monitor.yaml
 ```
 
 It will take a while for the image to download. You can check the status of the container by running:
@@ -340,7 +340,7 @@ Now the IIS pod should appear in the list of pods
 ```powershell
 PS C:\minikube\v2> kubectl get pods -A
 NAMESPACE      NAME                                  READY   STATUS    RESTARTS       AGE 
-default        iis-sample-676cb9fdf4-hlg7d           1/1     Running   0              19m 
+default        iis-logmonitor-5cfbfbf855-mxjm2       1/1     Running   0              19m 
 kube-flannel   kube-flannel-ds-6mjwl                 1/1     Running   0              3h7m
 kube-flannel   kube-flannel-ds-9q9rf                 1/1     Running   0              3h8m 
 kube-flannel   kube-flannel-ds-windows-amd64-psr5z   1/1     Running   0              4m42s
@@ -364,34 +364,41 @@ kubectl exec <pod-name> -- powershell dir
 The above will execute the "dir" command inside the container and return the output.
 
 ```powershell
-PS C:\minikube\v2> kubectl exec iis-sample-676cb9fdf4-hlg7d -- powershell dir 
+PS C:\minikube\v2> kubectl exec iis-logmonitor-5cfbfbf855-mxjm2 -- powershell dir 
 
-    Directory: C:\
+    Directory: C:\LogMonitor
 
 Mode                 LastWriteTime         Length Name 
 ----                 -------------         ------ ---- 
-d-----         9/18/2023   4:29 PM                dev 
-d-r---          9/1/2023  12:45 AM                Program Files
-d-----         8/31/2023   5:28 PM                Program Files (x86) 
-d-r---         8/31/2023   5:51 PM                Users 
-d-----         9/18/2023   4:29 PM                var 
-d-----         9/18/2023   4:31 PM                Windows 
--a----          6/8/2023   5:46 AM           5647 License.txt
--a----         9/12/2023  10:54 AM         168344 ServiceMonitor.exe 
+-a----         9/13/2023   9:45 AM         738304 LogMonitor.exe 
+-a----         9/18/2023   5:50 PM           1442 LogMonitorConfig.json
 ```
 
-Let us deploy a Windows Container to the cluster and monitor logs emitted to STDOUT using [LogMonitor](https://github.com/microsoft/windows-container-tools).
-
-```powershell
-wget https://raw.githubusercontent.com/vrapolinario/MinikubeWindowsContainers/main/iis-log-monitor.yaml -OutFile .\iis-log-monitor.yaml
-kubectl apply -f .\iis-log-monitor.yaml
-```
-
-Get the logs below using
+We can get the logs streamed to STDOUT using the command below
 ```powershell
 kubectl logs <pod-name>
 ```
 ![iis-logmonitor-5cfbfbf855-mxjm2 pod logs](./Windows-Node-Logs.png)
+
+## Access the app from outside the cluster nodes
+
+Use the command below which maps an external ip to the service
+```powershell
+minikube tunnel 
+```
+![Minikube Tunnel Command](./Minikube-Tunnel.png)
+
+Open a second powershell window and get the EXTERNAL-IP that we will use to access the default IIS page hosted in iis-logmonitor app
+```powershell
+PS C:\minikube\v2> kubectl get services
+NAME             TYPE           CLUSTER-IP    EXTERNAL-IP   PORT(S)        AGE 
+iis-logmonitor   LoadBalancer   10.107.41.1   10.107.41.1   80:31379/TCP   12h
+kubernetes       ClusterIP      10.96.0.1     <none>        443/TCP        18h
+```
+In the above output the EXTERNAL-IP is 10.107.41.1. To get to the IIS Windows Server page access this link on your browser [http://10.107.41.1:80](http://10.107.41.1:80) and you should see the webpage below
+
+![IIS-Windows-Server](./IIS-Windows-Server.png)
+
 
 ## Known issues
 
