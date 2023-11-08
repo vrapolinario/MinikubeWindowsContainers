@@ -31,10 +31,28 @@ Invoke-Expression `$kubeletCommandLine
 "@ | Set-Content -Path "c:\k\Start-kubelet.ps1"
 
     # Install kubelet as a Windows service
-    "c:\k\nssm.exe install kubelet Powershell -ExecutionPolicy Bypass -NoProfile c:\k\Start-kubelet.ps1"
-    "c:\k\nssm.exe set Kubelet AppStdout C:\k\kubelet.log"
-    "c:\k\nssm.exe set Kubelet AppStderr C:\k\kubelet.err.log"
+    c:\k\nssm.exe install kubelet Powershell -ExecutionPolicy Bypass -NoProfile c:\k\Start-kubelet.ps1
+    c:\k\nssm.exe set Kubelet AppStdout C:\k\kubelet.log
+    c:\k\nssm.exe set Kubelet AppStderr C:\k\kubelet.err.log
+}
+
+function Set-Port {
+    New-NetFirewallRule -Name kubelet -DisplayName 'kubelet' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 10250 
+    
+}
+
+function Get-Kubeadm {
+    param (
+        [string]
+        [ValidateNotNullOrEmpty()]
+        $KubernetesVersion = "v1.27.3"
+    )
+    curl.exe -L https://dl.k8s.io/$KubernetesVersion/bin/windows/amd64/kubeadm.exe -o c:\k\kubeadm.exe
+    Set-Location c:\k
 }
 
 
 # Example usage: Install-Kubelet -KubernetesVersion "v1.27.3"
+Export-ModuleMember -Function Install-Kubelet
+Export-ModuleMember -Function Set-Port
+Export-ModuleMember -Function Get-Kubeadm

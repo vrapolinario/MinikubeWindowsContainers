@@ -140,3 +140,9 @@ function Initialize-ContainerdService {
     Write-Output "Containerd service"
     Get-Service *containerd* | Select-Object Name, DisplayName, ServiceName, ServiceType, StartupType, Status, RequiredServices, ServicesDependedOn
 }
+
+
+Export-ModuleMember -Function Get-ContainerdLatestVersion
+Export-ModuleMember -Function Install-Containerd
+Export-ModuleMember -Function Start-ContainerdService
+Export-ModuleMember -Function Initialize-ContainerdService

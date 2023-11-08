@@ -36,16 +36,3 @@ function Start-RemoteSession {
     
     Enter-PSSession -VMName $VMName -Credential $Credential;
 }
-
- 
-
-
-
-
-
-function Enable-FireWall-Ports {
-    New-NetFirewallRule -Name kubelet -DisplayName 'kubelet' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 10250
-    
-}
-
-

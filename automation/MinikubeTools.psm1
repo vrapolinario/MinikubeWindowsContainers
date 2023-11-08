@@ -8,6 +8,12 @@ function Start-Minikube {
     minikube start --driver=hyperv --hyperv-virtual-switch=$SwitchName --nodes=2 --cni=flannel --container-runtime=containerd
 }
 
+function Get-LinuxMasterNodeIP {
+    $IP = minikube ip
+    return $IP
+    
+}
+
 function Set-Flannel {
     param (
         [string]
@@ -43,5 +49,33 @@ function Get-JoinCommand {
 
     return $outputString
 
+}
+
+function Set-MinikubeFolderError {
+    mkdir c:\var\lib\minikube\certs
+    Copy-Item C:\etc\kubernetes\pki\ca.crt -Destination C:\var\lib\Minikube\Certs
+    Remove-Item C:\etc\kubernetes\pki\ca.crt
+}
+
+function Add-Host {
+    param (
+        [string]
+        [ValidateNotNullOrEmpty()]
+        $IP,
+        [string]
+        [ValidateNotNullOrEmpty()]
+        $Path = "C:\Windows\System32\drivers\etc\hosts"
+    )
+
+    Add-Content -Path $Path -Value "`n`t`t$IP`tcontrol-plane.minikube.internal" -Force
     
 }
+
+
+Export-ModuleMember -Function Start-Minikube
+Export-ModuleMember -Function Get-LinuxMasterNodeIP
+Export-ModuleMember -Function Set-Flannel
+Export-ModuleMember -Function Get-JoinCommand
+Export-ModuleMember -Function Invoke-RunCommand
+Export-ModuleMember -Function Set-MinikubeFolderError
+Export-ModuleMember -Function Add-Host
