@@ -1,3 +1,5 @@
+Import-Module -Name "$PSScriptRoot\SetUpUtilities.psm1" -Force
+
 function Get-ContainerdLatestVersion {
     $latestVersion = Get-LatestToolVersion -Repository "containerd/containerd"
     return $latestVersion
@@ -16,17 +18,20 @@ function Install-Containerd {
         
         [String]
         [parameter(HelpMessage = "Path to download files. Defaults to user's Downloads folder")]
-        $DownloadPath = ".\bin\"
+        $DownloadPath = "$HOME\Downloads"
     )
+
+    # Uninstall if tool exists at specified location. Requires user consent
+    # Uninstall-ContainerTool -Tool "ContainerD" -Path $InstallPath
 
     if(!$Version) {
         # Get default version
         $Version = Get-ContainerdLatestVersion
     }
+
     $Version = $Version.TrimStart('v')
     Write-Output "Downloading and installing Containerd v$version at $InstallPath"
 
-    $EnvPath = "$InstallPath\bin"
     
     # Download file from repo
     $containerdTarFile = "containerd-${version}-windows-amd64.tar.gz"
@@ -48,7 +53,7 @@ function Install-Containerd {
         Feature      = "containerd"
         InstallPath  = $InstallPath
         DownloadPath = "$DownloadPath\$containerdTarFile"
-        EnvPath      = $EnvPath
+        EnvPath      = "$InstallPath\bin"
         cleanup      = $true
     }
 

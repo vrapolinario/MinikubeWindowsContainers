@@ -1,3 +1,5 @@
+$envPathRegKey = "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment"
+
 function Get-HyperV {
     $hyperv = Get-WindowsOptionalFeature -FeatureName Microsoft-Hyper-V-All -Online
     # Check if Hyper-V is enabled
@@ -31,3 +33,84 @@ function Get-LatestToolVersion($repository) {
         Throw "Could not get $repository version. $_"
     }
 }
+
+function ParsePathString($pathString) {
+    $parsedString = $pathString -split ";" | `
+        ForEach-Object { $_.TrimEnd("\") } | `
+        Select-Object -Unique | `
+        Where-Object { ![string]::IsNullOrWhiteSpace($_) }
+
+    if (!$parsedString) {
+        $DebugPreference = 'Stop'
+        Write-Debug "Env path cannot be null or an empty string"
+    }
+    return $parsedString -join ";"
+}
+
+function Install-RequiredFeature {
+    param(
+        [string] $Feature,
+        [string] $InstallPath,
+        [string] $DownloadPath,
+        [string] $EnvPath,
+        [boolean] $cleanup
+    )
+    
+    # Create the directory to untar to
+    Write-Information -InformationAction Continue -MessageData "Extracting $Feature to $InstallPath"
+    if (!(Test-Path $InstallPath)) { 
+        New-Item -ItemType Directory -Force -Path $InstallPath | Out-Null 
+    }
+
+    # Untar file
+    if ($DownloadPath.EndsWith("tar.gz")) {
+        tar.exe -xf $DownloadPath -C $InstallPath
+        if ($LASTEXITCODE -gt 0) {
+            Throw "Could not untar $DownloadPath. $_"
+        }
+    }
+
+    # Add to env path
+    Add-FeatureToPath -Feature $Feature -Path $EnvPath
+
+    # Clean up
+    if ($CleanUp) {
+        Write-Output "Cleanup to remove downloaded files"
+        Remove-Item $downloadPath -Force -ErrorAction Continue
+    }
+}
+
+function Add-FeatureToPath {
+    param (
+        [string]
+        [ValidateNotNullOrEmpty()]
+        [parameter(HelpMessage = "Feature to add to env path")]
+        $feature,
+
+        [string]
+        [ValidateNotNullOrEmpty()]
+        [parameter(HelpMessage = "Path where the feature is installed")]
+        $path
+    )
+
+    $currPath = (Get-ItemProperty -Path $envPathRegKey -Name path).path
+    $currPath = ParsePathString -PathString $currPath
+    if (!($currPath -like "*$feature*")) {
+        Write-Information -InformationAction Continue -MessageData "Adding $feature to Environment Path RegKey"
+
+        # Add to reg key
+        Set-ItemProperty -Path $envPathRegKey -Name PATH -Value "$currPath;$path"
+    }
+
+    $currPath = ParsePathString -PathString $env:Path
+    if (!($currPath -like "*$feature*")) {
+        Write-Information -InformationAction Continue -MessageData "Adding $feature to env path"
+        # Add to env path
+        [Environment]::SetEnvironmentVariable("Path", "$($env:path);$path", [System.EnvironmentVariableTarget]::Machine)
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine")
+    }
+}
+
+Export-ModuleMember -Function Get-LatestToolVersion
+Export-ModuleMember -Function Install-RequiredFeature
+Export-ModuleMember -Function Add-FeatureToPath

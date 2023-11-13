@@ -1,7 +1,7 @@
-Import-Module -Name "ContainerdTools.psm1" -Force
-Import-Module -Name "k8Tools.psm1" -Force
-Import-Module -Name "MinikubeTools.psm1" -Force
-Import-Module -Name "NSSMTools.psm1" -Force
+Import-Module -Name "$PSScriptRoot\ContainerdTools.psm1" -Force
+Import-Module -Name "$PSScriptRoot\k8Tools.psm1" -Force
+Import-Module -Name "$PSScriptRoot\MinikubeTools.psm1" -Force
+Import-Module -Name "$PSScriptRoot\NSSMTools.psm1" -Force
 
 Install-Containerd
 Initialize-ContainerdService
