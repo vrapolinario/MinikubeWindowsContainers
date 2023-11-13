@@ -15,10 +15,9 @@ function Start-VirtualMachine {
 
     $VM = @{
         Name = $VMName
-        MemoryStartupBytes = 6000MB
-        Generation = 2
+        MemoryStartupBytes = 1GB
         NewVHDPath = "${env:homepath}\.minikube\machines\$VMName\VHD.vhdx"
-        NewVHDSizeBytes = 127000MB
+        NewVHDSizeBytes = 10GB
         BootDevice = "VHD"
         Path = "${env:homepath}\.minikube\machines\"
         SwitchName = (Get-VMSwitch).Name
