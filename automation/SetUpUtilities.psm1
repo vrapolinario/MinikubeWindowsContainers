@@ -25,7 +25,7 @@ function Get-VmSwitch {
 function Get-LatestToolVersion($repository) {
     try {
         $uri = "https://api.github.com/repos/$repository/releases/latest"
-        $response = Invoke-WebRequest -Uri $uri
+        $response = Invoke-WebRequest -Uri $uri -UseBasicParsing
         $version = ($response.content  | ConvertFrom-Json).tag_name
         return $version.TrimStart("v")
     }
