@@ -69,7 +69,7 @@ function Install-Containerd {
 function Start-ContainerdService {
     Set-Service containerd -StartupType Automatic
     try {
-        Start-Service containerd -Force
+        Start-Service containerd
 
         # Waiting for containerd to come to steady state
         (Get-Service containerd -ErrorAction SilentlyContinue).WaitForStatus('Running', '00:00:30')
