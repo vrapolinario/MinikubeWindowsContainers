@@ -120,13 +120,26 @@ function Initialize-ContainerdService {
         }
     )
 
-    # Perform the replacements
-    foreach ($replacement in $replacements) {
-        $containerdConfigContent = $containerdConfigContent -replace [regex]::Escape($replacement.Find), $replacement.Replace
+    # check if replacements are neede and perform them in one iteration 
+    $replacementsNeeded = $false
+    foreach($replacement in $replacements) {
+        if ($containerdConfigContent -contains $replacement.Find) {
+            $replacementsNeeded = $true
+            $containerdConfigContent = $containerdConfigContent -replace [regex]::Escape($replacement.Find), $replacement.Replace
+        }
     }
 
-    # Save the modified content back to the config.toml file
-    Set-Content -Path $containerdConfigFile -Value $containerdConfigContent
+    # Perform the replacements only if needed
+    if ($replacementsNeeded) {
+        # Save the modified content back to the config.toml file
+        Set-Content -Path $containerdConfigFile -Value $containerdConfigContent
+
+        # Output a message indicating the changes
+        Write-Host "Changes applied to $containerdConfigFile"
+    } else {
+        Write-Host "No changes needed in $containerdConfigFile"
+    }
+    
 
     # Output a message indicating the changes
     Write-Host "Changes applied to $containerdConfigFile"
