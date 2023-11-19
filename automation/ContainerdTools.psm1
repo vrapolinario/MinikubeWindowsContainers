@@ -144,16 +144,38 @@ function Initialize-ContainerdService {
     # Output a message indicating the changes
     Write-Host "Changes applied to $containerdConfigFile"
 
-    # Create the folders above
-    mkdir c:\opt\cni\bin
-    mkdir c:\etc\cni\net.d
+     # Create the folders if they do not exist
+    $binDir = "c:\opt\cni\bin"
+    $confDir = "c:\etc\cni\net.d"
 
-    # Register containerd service
-    Add-FeatureToPath -Feature "containerd" -Path "$ContainerdPath\bin"
-    containerd.exe --register-service --log-level debug --service-name containerd --log-file "$env:TEMP\containerd.log"
-    if ($LASTEXITCODE -gt 0) {
-        Throw "Failed to register containerd service. $_"
+    if (!(Test-Path $binDir)) {
+        mkdir $binDir
+        Write-Host "Created $binDir"
     }
+
+    if (!(Test-Path $confDir)) {
+        mkdir $confDir
+        Write-Host "Created $confDir"
+    }
+
+
+    $pathExists = [System.Environment]::GetEnvironmentVariable('PATH', [System.EnvironmentVariableTarget]::Machine) -like "*$ContainerdPath\bin*"
+    if (-not $pathExists) {
+        # Register containerd service
+        Add-FeatureToPath -Feature "containerd" -Path "$ContainerdPath\bin"
+    }
+
+    # Check if the containerd service is already registered
+    $containerdServiceExists = Get-Service -Name "containerd" -ErrorAction SilentlyContinue
+    if (-not $containerdServiceExists) {
+        containerd.exe --register-service --log-level debug --service-name containerd --log-file "$env:TEMP\containerd.log"
+        if ($LASTEXITCODE -gt 0) {
+            Throw "Failed to register containerd service. $_"
+        }
+    } else {
+        Write-Host "Containerd service is already registered."
+    }
+
 
     Write-Output "Containerd service"
     Get-Service *containerd* | Select-Object Name, DisplayName, ServiceName, ServiceType, StartupType, Status, RequiredServices, ServicesDependedOn
