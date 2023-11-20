@@ -77,6 +77,8 @@ function Start-ContainerdService {
     catch {
         Throw "Couldn't start Containerd service. $_"
     } 
+
+    Get-Service *containerd* | Select-Object Name, DisplayName, ServiceName, ServiceType, StartupType, Status, RequiredServices, ServicesDependedOn
 }
 
 function Initialize-ContainerdService {
@@ -176,8 +178,6 @@ function Initialize-ContainerdService {
         Write-Host "Containerd service is already registered."
     }
 
-
-    Write-Output "Containerd service"
     Get-Service *containerd* | Select-Object Name, DisplayName, ServiceName, ServiceType, StartupType, Status, RequiredServices, ServicesDependedOn
 }
 
