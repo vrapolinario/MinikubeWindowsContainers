@@ -66,23 +66,6 @@ function Install-Containerd {
     Write-Output "For containerd usage: run 'containerd -h'"
 }
 
-function Uninstall-ContainerTool ($tool, $path) {
-    $pathItems = Get-ChildItem -Path $path -ErrorAction SilentlyContinue
-    if ($null -eq $pathItems) {
-        return
-    }
-
-    Write-Warning "Uninstalling preinstalled $tool at the path $path"
-    try {
-        $command = "Uninstall-$tool -Path '$path'"
-        Invoke-Expression -Command $command
-    }
-    catch {
-        Throw "Could not uninstall $tool. $_"
-    }
-}
-
-
 function Start-ContainerdService {
     Set-Service containerd -StartupType Automatic
     try {
