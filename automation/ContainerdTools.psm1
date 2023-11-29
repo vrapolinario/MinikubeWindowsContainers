@@ -281,7 +281,7 @@ function Unregister-Containerd {
 
 Export-ModuleMember -Function Get-ContainerdLatestVersion
 Export-ModuleMember -Function Install-Containerd
-Export-ModuleMember -Function Uninstall-ContainerTool
 Export-ModuleMember -Function Start-ContainerdService
+Export-ModuleMember -Function Stop-ContainerdService -Alias Stop-Containerd
 Export-ModuleMember -Function Initialize-ContainerdService
 Export-ModuleMember -Function Uninstall-Containerd
