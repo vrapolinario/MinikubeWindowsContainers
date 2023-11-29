@@ -98,6 +98,24 @@ function Start-ContainerdService {
     Get-Service *containerd* | Select-Object Name, DisplayName, ServiceName, ServiceType, StartupType, Status, RequiredServices, ServicesDependedOn
 }
 
+function Stop-ContainerdService {
+    $containerdStatus = Get-Service containerd -ErrorAction SilentlyContinue
+    if (!$containerdStatus) {
+        Write-Warning "Containerd service does not exist as an installed service."
+        return
+    }
+
+    try {
+        Stop-Service containerd -NoWait
+
+        # Waiting for containerd to come to steady state
+        (Get-Service containerd -ErrorAction SilentlyContinue).WaitForStatus('Stopped', '00:00:30')
+    }
+    catch {
+        Throw "Couldn't stop Containerd service. $_"
+    } 
+}
+
 function Initialize-ContainerdService {
     param(
         [string]
