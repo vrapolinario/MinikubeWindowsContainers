@@ -22,7 +22,7 @@ function Install-Containerd {
     )
 
     # Uninstall if tool exists at specified location. Requires user consent
-    # Uninstall-ContainerTool -Tool "ContainerD" -Path $InstallPath
+    Uninstall-ContainerTool -Tool "ContainerD" -Path $InstallPath
 
     if(!$Version) {
         # Get default version
@@ -65,6 +65,23 @@ function Install-Containerd {
 
     Write-Output "For containerd usage: run 'containerd -h'"
 }
+
+function Uninstall-ContainerTool ($tool, $path) {
+    $pathItems = Get-ChildItem -Path $path -ErrorAction SilentlyContinue
+    if ($null -eq $pathItems) {
+        return
+    }
+
+    Write-Warning "Uninstalling preinstalled $tool at the path $path"
+    try {
+        $command = "Uninstall-$tool -Path '$path'"
+        Invoke-Expression -Command $command
+    }
+    catch {
+        Throw "Could not uninstall $tool. $_"
+    }
+}
+
 
 function Start-ContainerdService {
     Set-Service containerd -StartupType Automatic
@@ -181,8 +198,72 @@ function Initialize-ContainerdService {
     Get-Service *containerd* | Select-Object Name, DisplayName, ServiceName, ServiceType, StartupType, Status, RequiredServices, ServicesDependedOn
 }
 
+function Uninstall-Containerd {
+    param(
+        [string]
+        [parameter(HelpMessage = "Containerd path")]
+        $Path
+    )
+    Write-Output "Uninstalling containerd"
+
+    if (!$Path) {
+        $Path = Get-DefaultInstallPath -Tool "containerd"
+    }
+
+    $pathItems = Get-ChildItem -Path $Path -ErrorAction SilentlyContinue
+    if (!$pathItems.Name.Length) {
+        Write-Warning "Containerd does not exist at $Path or the directory is empty"
+        return
+    }
+
+    try {
+        Stop-ContainerdService
+    }
+    catch {
+        Write-Warning "$_"
+    }
+
+    # Unregister containerd service
+    Unregister-Containerd
+
+    # Delete the containerd key
+    $regkey = "HKLM:\SYSTEM\CurrentControlSet\Services\containerd"
+    Get-Item -path $regkey -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force
+
+    # Remove the folder where containerd service was installed
+    Get-Item -Path $Path -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force
+
+    # Remove from env path
+    Remove-FeatureFromPath -Feature "containerd"
+
+    Write-Output "Successfully uninstalled Containerd."
+}
+function Unregister-Containerd {
+    $scQueryResult = (sc.exe query containerd) | Select-String -Pattern "SERVICE_NAME: containerd"
+    if (!$scQueryResult) {
+        Write-Warning "Containerd service does not exist as an installed service."
+        return
+    }
+    # Unregister containerd service
+    containerd.exe --unregister-service
+    if ($LASTEXITCODE -gt 0) {
+        Write-Warning "Could not unregister containerd service. $_"
+    }
+    else {
+        Start-Sleep -Seconds 15
+    }
+    
+    # # Delete containerd service
+    # sc.exe delete containerd
+    # if ($LASTEXITCODE -gt 0) {
+    #     Write-Warning "Could not delete containerd service. $_"
+    # }
+}
+
 
 Export-ModuleMember -Function Get-ContainerdLatestVersion
 Export-ModuleMember -Function Install-Containerd
+Export-ModuleMember -Function Uninstall-ContainerTool
 Export-ModuleMember -Function Start-ContainerdService
 Export-ModuleMember -Function Initialize-ContainerdService
+Export-ModuleMember -Function Uninstall-Containerd
