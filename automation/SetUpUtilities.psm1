@@ -80,6 +80,22 @@ function Install-RequiredFeature {
     }
 }
 
+function Uninstall-ContainerTool ($tool, $path) {
+    $pathItems = Get-ChildItem -Path $path -ErrorAction SilentlyContinue
+    if ($null -eq $pathItems) {
+        return
+    }
+
+    Write-Warning "Uninstalling preinstalled $tool at the path $path"
+    try {
+        $command = "Uninstall-$tool -Path '$path'"
+        Invoke-Expression -Command $command
+    }
+    catch {
+        Throw "Could not uninstall $tool. $_"
+    }
+}
+
 function Add-FeatureToPath {
     param (
         [string]
@@ -111,6 +127,57 @@ function Add-FeatureToPath {
     }
 }
 
+function Remove-FeatureFromPath {
+    param (
+        [string]
+        [ValidateNotNullOrEmpty()]
+        [parameter(HelpMessage = "Feature to remove from env path")]
+        $feature
+    )
+    
+    # Remove from regkey
+    $currPath = (Get-ItemProperty -Path $envPathRegKey -Name path).path
+    $currPath = ParsePathString -PathString $currPath
+    if ($currPath -like "*$feature*") {
+        $NewPath = removeFeatureFromPath -PathString $currPath -Feature $feature
+        Set-ItemProperty -Path $envPathRegKey -Name PATH -Value $NewPath
+    }
+    
+    # Remove from env path
+    $currPath = ParsePathString -PathString $env:Path
+    if ($currPath -like "*$feature*") {
+        Write-Information -InformationAction Continue -MessageData "Removing $feature from env path"
+        $newPathString = removeFeatureFromPath -PathString $currPath -Feature $feature
+        [Environment]::SetEnvironmentVariable("Path", "$newPathString", [System.EnvironmentVariableTarget]::Machine)
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine")
+    }
+}
+
+function ParsePathString($pathString) {
+    $parsedString = $pathString -split ";" | `
+        ForEach-Object { $_.TrimEnd("\") } | `
+        Select-Object -Unique | `
+        Where-Object { ![string]::IsNullOrWhiteSpace($_) }
+
+    if (!$parsedString) {
+        $DebugPreference = 'Stop'
+        Write-Debug "Env path cannot be null or an empty string"
+    }
+    return $parsedString -join ";"
+}
+
+function RemoveFeatureFromPath ($pathString, $feature) {
+    $parsedString = $pathString -split ";" |  Where-Object { !($_ -like "*$feature*") }
+
+    if (!$parsedString) {
+        $DebugPreference = 'Stop'
+        Write-Debug "Env path cannot be null or an empty string"
+    }
+    return $parsedString -join ";"
+}
+
 Export-ModuleMember -Function Get-LatestToolVersion
 Export-ModuleMember -Function Install-RequiredFeature
+Export-ModuleMember -Function Uninstall-ContainerTool
 Export-ModuleMember -Function Add-FeatureToPath
+Export-ModuleMember -Function Remove-FeatureFromPath
