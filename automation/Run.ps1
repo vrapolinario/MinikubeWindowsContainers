@@ -12,7 +12,8 @@ function Run {
 
     # Invoke-Command -VMName $VMName -Credential $Credential -ScriptBlock {Get-Culture} 
 
-    $LocalScriptsPath = $PWD
+    $CurrrentDirectory = $PWD
+    $LocalScriptsPath = Split-Path -Path $CurrrentDirectory -Parent
     $CompressedFilePath = "$LocalScriptsPath\MinikubeWindowsContainers.zip" 
 
     Compress-Archive -Path $LocalScriptsPath -DestinationPath $CompressedFilePath -Force
