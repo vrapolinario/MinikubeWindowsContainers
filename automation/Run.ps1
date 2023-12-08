@@ -20,6 +20,8 @@ function Run {
 
     $RemoteScriptsPath = "C:\Users\Administrator\Documents" 
 
+    $session = New-PSSession -VMName $VMName -Credential $Credential
+    
     Copy-Item -Path $CompressedFilePath -Destination $RemoteScriptsPath -Force -ToSession $Session  
 
     $ScriptBlock = { 
