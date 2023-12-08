@@ -22,7 +22,7 @@ function Install-Containerd {
     )
 
     # Uninstall if tool exists at specified location. Requires user consent
-    Uninstall-ContainerTool -Tool "ContainerD" -Path $InstallPath
+    # Uninstall-ContainerTool -Tool "ContainerD" -Path $InstallPath
 
     if(!$Version) {
         # Get default version
