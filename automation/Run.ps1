@@ -1,30 +1,47 @@
-Import-Module -Name "$PSScriptRoot\ContainerdTools.psm1" -Force
-Import-Module -Name "$PSScriptRoot\k8Tools.psm1" -Force
-Import-Module -Name "$PSScriptRoot\MinikubeTools.psm1" -Force
-Import-Module -Name "$PSScriptRoot\NSSMTools.psm1" -Force
+function Run {
+    param (
+        [string]$VMName,
+        [string]$UserName,
+        [string]$Pass
+    ) 
 
-Install-Containerd
-Initialize-ContainerdService
-Start-ContainerdService
-Install-NSSM
-Install-Kubelet
-Set-Port
+    $SecurePassword = ConvertTo-SecureString -String $Pass -AsPlainText -Force
+    $Credential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $Username, $SecurePassword
 
-$IP = minikube ip  
-$Path = $Path = "C:\Windows\System32\drivers\etc\hosts"
+    Enter-PSSession -VMName $VMName -Credential $Credential
 
-Add-Host -IP $IP -Path $Path
+    # Invoke-Command -VMName $VMName -Credential $Credential -ScriptBlock {Get-Culture} 
 
-Get-Kubeadm
+    $LocalScriptsPath = $PWD
+    $CompressedFilePath = "$LocalScriptsPath\MinikubeWindowsContainers.zip" 
+
+    Compress-Archive -Path $LocalScriptsPath -DestinationPath $CompressedFilePath -Force
+
+    $RemoteScriptsPath = "C:\Users\Administrator\Documents" 
+
+    Copy-Item -Path $CompressedFilePath -Destination $RemoteScriptsPath -Force -ToSession $Session  
+
+    $ScriptBlock = { 
+        $CompressedFilePath = "C:\Users\Administrator\Documents\MinikubeWindowsContainers.zip"
+        $UncompressedFolderPath = "C:\Users\Administrator\Documents"
+        Expand-Archive -Path $CompressedFilePath -DestinationPath $UncompressedFolderPath -Force
+    }
+
+    Invoke-Command -VMName $VMName -Credential $Credential -ScriptBlock $ScriptBlock
+
+    $ScriptBlock = { 
+        $UncompressedFolderPath = "C:\Users\Administrator\Documents\MinikubeWindowsContainers"
+        
+        Import-Module -Name "$UncompressedFolderPath\automation\ContainerdTools.psm1" -Force
+        Import-Module -Name "$UncompressedFolderPath\automation\k8Tools.psm1" -Force
+        Import-Module -Name "$UncompressedFolderPath\automation\MinikubeTools.psm1" -Force
+        Import-Module -Name "$UncompressedFolderPath\automation\NSSMTools.psm1" -Force
+    
+        # Run the main script
+        . "$UncompressedFolderPath\automation\Main.ps1"
+    }
+
+    Invoke-Command -VMName $VMName -Credential $Credential -ScriptBlock $ScriptBlock
+}
 
 
-$JoinCommand = Get-JoinCommand
-
-Invoke-Expression $JoinCommand
-
-Set-MinikubeFolderError
-
-Invoke-Expression $JoinCommand
-
-# windows node successfully joined in the cluster
-& kubectl get nodes -o wide
