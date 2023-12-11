@@ -10,24 +10,8 @@ Install-NSSM
 Install-Kubelet
 Set-Port
 
-$IP = minikube ip  
-$Path = $Path = "C:\Windows\System32\drivers\etc\hosts"
-
-Add-Host -IP $IP -Path $Path
-
-Get-Kubeadm
 
 
-$JoinCommand = Get-JoinCommand
-
-Invoke-Expression $JoinCommand
-
-Set-MinikubeFolderError
-
-Invoke-Expression $JoinCommand
-
-# windows node successfully joined in the cluster
-& kubectl get nodes -o wide
 
 
 
