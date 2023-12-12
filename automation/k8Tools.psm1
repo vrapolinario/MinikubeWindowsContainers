@@ -5,6 +5,13 @@ function Install-Kubelet {
         $KubernetesVersion = "v1.27.3"
     )
 
+    # Check if kubelet service is already installed
+    $nssmService = Get-WmiObject win32_service | Where-Object {$_.PathName -like '*nssm*'}
+    if ($nssmService.Name -eq 'kubelet') {
+        Write-Output "Kubelet service is already installed."
+        return
+    }
+
     # Define the URL for kubelet download
     $KubeletUrl = "https://dl.k8s.io/$KubernetesVersion/bin/windows/amd64/kubelet.exe"
 
@@ -37,8 +44,13 @@ Invoke-Expression `$kubeletCommandLine
 }
 
 function Set-Port {
-    New-NetFirewallRule -Name kubelet -DisplayName 'kubelet' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 10250 
-    
+    $firewallRule = Get-NetFirewallRule -Name 'kubelet' -ErrorAction SilentlyContinue
+    if ($firewallRule) {
+        Write-Output "Firewall rule 'kubelet' already exists."
+        return
+    }
+
+    New-NetFirewallRule -Name 'kubelet' -DisplayName 'kubelet' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 10250
 }
 
 function Get-Kubeadm {

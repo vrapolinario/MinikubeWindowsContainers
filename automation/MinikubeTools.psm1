@@ -44,6 +44,9 @@ function Get-JoinCommand {
     # Append '--cri-socket "npipe:////./pipe/containerd-containerd"'
     $outputString += ' --cri-socket "npipe:////./pipe/containerd-containerd"'
 
+    # View stack trace
+    $outputString += ' --v=5'
+
     # Print the modified string
     Write-Host $outputString
 
