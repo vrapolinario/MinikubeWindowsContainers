@@ -1,4 +1,8 @@
 function Install-NSSM {
+    if (Get-Command 'nssm' -ErrorAction SilentlyContinue) {
+        Write-Output "NSSM is already installed."
+        return
+    }
     if (-not (Test-Path -Path "c:\k" -PathType Container)) {
         mkdir "c:\k"
     }
