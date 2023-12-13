@@ -1,4 +1,5 @@
 Import-Module -Name "$PSScriptRoot\k8Tools.psm1" -Force
+Import-Module -Name "$PSScriptRoot\MinikubeTools.psm1" -Force
 
 function Run {
     param (
@@ -42,7 +43,6 @@ function Run {
         Import-Module -Name "$UncompressedFolderPath\automation\MinikubeTools.psm1" -Force
         Import-Module -Name "$UncompressedFolderPath\automation\NSSMTools.psm1" -Force
     
-        # Initialize Windows Node
         . "$UncompressedFolderPath\automation\InitNode.ps1"
 
         Exit-PSSession
@@ -53,7 +53,6 @@ function Run {
 
     $commandString = "minikube ip"
     $IP = Invoke-Expression -Command $commandString
-    Write-Host "$IP --- IP"
 
     $ScriptBlock = { 
         [CmdletBinding()]
@@ -66,8 +65,6 @@ function Run {
 
         Import-Module -Name "$UncompressedFolderPath\automation\MinikubeTools.psm1" -Force
 
-        # Set Host File
-        #. "$UncompressedFolderPath\automation\SetHost.ps1"
         Add-Host -IP $IP
 
         Exit-PSSession

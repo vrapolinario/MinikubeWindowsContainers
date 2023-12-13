@@ -55,9 +55,16 @@ function Get-JoinCommand {
 }
 
 function Set-MinikubeFolderError {
-    mkdir c:\var\lib\minikube\certs
-    Copy-Item C:\etc\kubernetes\pki\ca.crt -Destination C:\var\lib\Minikube\Certs
-    Remove-Item C:\etc\kubernetes\pki\ca.crt
+    if (!(Test-Path -Path c:\var\lib\minikube\certs)) {
+        mkdir c:\var\lib\minikube\certs
+    }
+
+    if (Test-Path -Path C:\etc\kubernetes\pki\ca.crt) {
+        Copy-Item C:\etc\kubernetes\pki\ca.crt -Destination C:\var\lib\Minikube\Certs
+        Remove-Item C:\etc\kubernetes\pki\ca.crt
+    } else {
+        Write-Output "File C:\etc\kubernetes\pki\ca.crt does not exist."
+    }
 }
 
 function Add-Host {
