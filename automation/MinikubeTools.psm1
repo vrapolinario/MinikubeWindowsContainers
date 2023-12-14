@@ -77,8 +77,13 @@ function Add-Host {
         $Path = "C:\Windows\System32\drivers\etc\hosts"
     )
 
-    Add-Content -Path $Path -Value "`n`t`t$IP`tcontrol-plane.minikube.internal" -Force
-    
+    $entry = "`t$IP`tcontrol-plane.minikube.internal"
+
+    $hostsContent = Get-Content -Path $Path -Raw
+    if ($hostsContent -notmatch [regex]::Escape($entry)) {
+        # If the entry does not exist, add it
+        Add-Content -Path $Path -Value "$entry" -Force
+    }
 }
 
 
