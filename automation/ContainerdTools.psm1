@@ -137,32 +137,26 @@ function Initialize-ContainerdService {
         @{
             Find = 'conf_dir = "C:\\Program Files\\containerd\\cni\\conf"'
             Replace = 'conf_dir = "c:\\etc\\cni\\net.d\\"'
-        }
+          }
     )
 
-    # check if replacements are neede and perform them in one iteration 
-    $replacementsNeeded = $false
+    # Perform the check and replacement in one loop
+    $replacementsMade = $false
     foreach($replacement in $replacements) {
-        if ($containerdConfigContent -contains $replacement.Find) {
-            $replacementsNeeded = $true
+        if ($containerdConfigContent -match [regex]::Escape($replacement.Find)) {
             $containerdConfigContent = $containerdConfigContent -replace [regex]::Escape($replacement.Find), $replacement.Replace
+            $replacementsMade = $true
         }
     }
 
-    # Perform the replacements only if needed
-    if ($replacementsNeeded) {
-        # Save the modified content back to the config.toml file
-        Set-Content -Path $containerdConfigFile -Value $containerdConfigContent
-
+    # Write the modified content back to the config.toml file if any replacements were made
+    if ($replacementsMade) {
+        $containerdConfigContent | Set-Content -Path $containerdConfigFile
         # Output a message indicating the changes
         Write-Host "Changes applied to $containerdConfigFile"
-    } else {
+        } else {
         Write-Host "No changes needed in $containerdConfigFile"
     }
-    
-
-    # Output a message indicating the changes
-    Write-Host "Changes applied to $containerdConfigFile"
 
      # Create the folders if they do not exist
     $binDir = "c:\opt\cni\bin"
