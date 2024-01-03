@@ -35,21 +35,11 @@ function Get-JoinCommand {
         [ValidateNotNullOrEmpty()]
         $Version = "v1.27.3"
     )
-
     $JoinCommand = (minikube ssh "cd /var/lib/minikube/binaries/v1.27.3/ && sudo ./kubeadm token create --print-join-command") 
-
-    # Replace 'kubeadm' with '.\kubeadm'
     $outputString = $JoinCommand -replace 'kubeadm', '.\kubeadm'
-
-    # Append '--cri-socket "npipe:////./pipe/containerd-containerd"'
     $outputString += ' --cri-socket "npipe:////./pipe/containerd-containerd"'
-
-    # View stack trace
     $outputString += ' --v=5'
-
-    # Print the modified string
     Write-Host $outputString
-
     return $outputString
 
 }
@@ -81,7 +71,6 @@ function Add-Host {
 
     $hostsContent = Get-Content -Path $Path -Raw
     if ($hostsContent -notmatch [regex]::Escape($entry)) {
-        # If the entry does not exist, add it
         Add-Content -Path $Path -Value "$entry" -Force
     }
 }

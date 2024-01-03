@@ -73,19 +73,45 @@ function Run {
     }
 
     Invoke-Command -VMName $VMName -Credential $Credential -ScriptBlock $ScriptBlock -ArgumentList $IP
-
-    Get-Kubeadm
+    
 
     $JoinCommand = Get-JoinCommand
 
-    Invoke-Expression $JoinCommand
+    $ScriptBlock = { 
+        [CmdletBinding()]
+        param (
+            [Parameter()]
+            [string]
+            $JoinCommand
+        )
+        $UncompressedFolderPath = "C:\Users\Administrator\Documents\MinikubeWindowsContainers"
 
-    Set-MinikubeFolderError
+        Import-Module -Name "$UncompressedFolderPath\automation\MinikubeTools.psm1" -Force
+        Import-Module -Name "$UncompressedFolderPath\automation\k8Tools.psm1" -Force
 
-    Invoke-Expression $JoinCommand
+        Get-Kubeadm
+
+        Invoke-Expression $JoinCommand
+
+        Set-MinikubeFolderError
+
+        Invoke-Expression $JoinCommand
+
+        Exit-PSSession
+    }
+
+    Invoke-Command -VMName $VMName -Credential $Credential -ScriptBlock $ScriptBlock -ArgumentList $JoinCommand
 
     # windows node successfully joined in the cluster
     & kubectl get nodes -o wide
+
+    # & kubectl apply -f "$UncompressedFolderPath\flannel-overlay.yaml"
+
+    # & kubectl apply -f "$UncompressedFolderPathkube\kube-proxy.yaml"
+
+    # & kubectl get pods -A
+
+    # & kubectl get nodes -o wide
 }
 
 
