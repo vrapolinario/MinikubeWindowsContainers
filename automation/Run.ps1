@@ -105,13 +105,4 @@ function Run {
     # windows node successfully joined in the cluster
     & kubectl get nodes -o wide
 
-    # & kubectl apply -f "$UncompressedFolderPath\flannel-overlay.yaml"
-
-    # & kubectl apply -f "$UncompressedFolderPathkube\kube-proxy.yaml"
-
-    # & kubectl get pods -A
-
-    # & kubectl get nodes -o wide
 }
-
-

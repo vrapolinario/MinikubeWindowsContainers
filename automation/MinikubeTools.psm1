@@ -17,7 +17,6 @@ function Get-LinuxMasterNodeIP {
 function Set-Flannel {
     param (
         [string]
-        [ValidateNotNullOrEmpty()]
         $NodeName 
     )
 

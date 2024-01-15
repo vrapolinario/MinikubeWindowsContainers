@@ -117,7 +117,7 @@ cd $Env:ProgramFiles\containerd\
 notepad config.toml
 ```
 
-The command above will copy the ContainerD binaries to the Program Files folder, and create a new config file. After that, Notepad will open so you can change some settings. You need to change the folling parameters:
+The command above will copy the ContainerD binaries to the Program Files folder, and create a new config file. After that, Notepad will open so you can change some settings. You need to change the following parameters:
 
 |Setting|Old value|New Value|
 |-------------|----------------|----------------|

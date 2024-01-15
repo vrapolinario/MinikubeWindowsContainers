@@ -6,7 +6,7 @@ function Install-NSSM {
     }
 
     if (-not (Test-Path -Path "c:\k" -PathType Container)) {
-        mkdir "c:\k"
+        mkdir "c:\k" | Out-Null
     }
     $arch = "win64"
     curl.exe -L https://k8stestinfrabinaries.blob.core.windows.net/nssm-mirror/nssm-2.24.zip -o nssm.zip

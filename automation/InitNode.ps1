@@ -9,9 +9,3 @@ Start-ContainerdService
 Install-NSSM
 Install-Kubelet
 Set-Port
-
-
-
-
-
-
