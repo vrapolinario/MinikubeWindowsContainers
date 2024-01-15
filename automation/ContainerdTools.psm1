@@ -7,11 +7,6 @@ function Get-ContainerdLatestVersion {
 
 function Install-Containerd {
     param(
-        [string]
-        [ValidateNotNullOrEmpty()]
-        [parameter(HelpMessage = "ContainerD version to use. Default 1.7.6")]
-        $Version,
-
         [String]
         [parameter(HelpMessage = "Path to install containerd. Defaults to ~\program files\containerd")]
         $InstallPath = "$Env:ProgramFiles\containerd",
@@ -24,10 +19,7 @@ function Install-Containerd {
     # Uninstall if tool exists at specified location. Requires user consent
     Uninstall-ContainerTool -Tool "ContainerD" -Path $InstallPath
 
-    if(!$Version) {
-        # Get default version
-        $Version = Get-ContainerdLatestVersion
-    }
+    $Version = Get-ContainerdLatestVersion
 
     $Version = $Version.TrimStart('v')
     Write-Output "Downloading and installing Containerd v$version at $InstallPath"
@@ -40,10 +32,6 @@ function Install-Containerd {
         Invoke-WebRequest -Uri $Uri -OutFile $DownloadPath\$containerdTarFile -Verbose
     }
     catch {
-        if ($_.ErrorDetails.Message -eq "Not found") {
-            Throw "Containerd download failed. Invalid URL: $uri"
-        }
-
         Throw "Containerd download failed. $_"
     }
 
@@ -78,7 +66,6 @@ function Start-ContainerdService {
         Throw "Couldn't start Containerd service. $_"
     } 
 
-    Get-Service *containerd* | Select-Object Name, DisplayName, ServiceName, ServiceType, StartupType, Status, RequiredServices, ServicesDependedOn
 }
 
 function Stop-ContainerdService {
@@ -163,12 +150,12 @@ function Initialize-ContainerdService {
     $confDir = "c:\etc\cni\net.d"
 
     if (!(Test-Path $binDir)) {
-        mkdir $binDir
+        mkdir $binDir | Out-Null
         Write-Host "Created $binDir"
     }
 
     if (!(Test-Path $confDir)) {
-        mkdir $confDir
+        mkdir $confDir | Out-Null
         Write-Host "Created $confDir"
     }
 
