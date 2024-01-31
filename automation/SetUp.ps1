@@ -1,5 +1,5 @@
 $SwitchName = "External VM Switch" 
-$ISOFile = "C:\Users\bosira\Downloads\SERVER_EVAL_x64FRE_en-us-uni.iso"
+$ISOFile = "$HOME\Downloads\SERVER_EVAL_x64FRE_en-us-uni.iso"
 $VMName = 'minikube-m05' 
 $VM = @{
     Name = $VMName;
