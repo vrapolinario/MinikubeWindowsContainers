@@ -10,6 +10,12 @@ function Run {
         [string]$Pass
     ) 
 
+    # configure Flannel CNI for Windows
+    # make sure the flannel daemon set is restarted to reflect the new Windows-specific configuration
+    & kubectl apply -f "..\kube-flannel.yml"
+    & kubectl rollout restart ds kube-flannel-ds -n kube-flannel 
+    & kubectl get pods -A
+
     $SecurePassword = ConvertTo-SecureString -String $Pass -AsPlainText -Force
     $Credential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $Username, $SecurePassword
 
@@ -102,7 +108,14 @@ function Run {
 
     Invoke-Command -VMName $VMName -Credential $Credential -ScriptBlock $ScriptBlock -ArgumentList $JoinCommand
 
-    # windows node successfully joined in the cluster
+    # validate windows node successfully join
+    & kubectl get nodes -o wide
+
+    # configure flannel and kube-proxy on the windows node
+    & kubectl apply -f "..\fannel-overlay.yml"
+    & kubectl apply -f "..\kube-proxy.yml"
+
+    # check the status of the windows node
     & kubectl get nodes -o wide
 
 }
