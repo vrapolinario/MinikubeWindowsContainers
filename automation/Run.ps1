@@ -12,7 +12,7 @@ function Run {
 
     # configure Flannel CNI for Windows
     # make sure the flannel daemon set is restarted to reflect the new Windows-specific configuration
-    & kubectl apply -f "..\kube-flannel.yml"
+    & kubectl apply -f "..\kube-flannel.yaml"
     & kubectl rollout restart ds kube-flannel-ds -n kube-flannel 
     & kubectl get pods -A
 
@@ -112,8 +112,8 @@ function Run {
     & kubectl get nodes -o wide
 
     # configure flannel and kube-proxy on the windows node
-    & kubectl apply -f "..\fannel-overlay.yml"
-    & kubectl apply -f "..\kube-proxy.yml"
+    & kubectl apply -f "..\flannel-overlay.yaml"
+    & kubectl apply -f "..\kube-proxy.yaml"
 
     # check the status of the windows node
     & kubectl get nodes -o wide
