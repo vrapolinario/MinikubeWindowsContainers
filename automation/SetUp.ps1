@@ -1,6 +1,6 @@
 $SwitchName = "External VM Switch" 
 $ISOFile = "$HOME\Downloads\SERVER_EVAL_x64FRE_en-us-uni.iso"
-$VMName = 'minikube-m05' 
+$VMName = 'minikube-ws22' 
 $VM = @{
     Name = $VMName;
     MemoryStartupBytes = 1GB;
