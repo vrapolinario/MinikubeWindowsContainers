@@ -10,6 +10,11 @@ function Run {
         [string]$Pass
     ) 
 
+    # Prepare the Linux nodes for Windows-specific Flannel CNI configuration
+    # at the moment we are assuming that you only have two linux nodes named minikube and minikube-m02
+    & minikube ssh "sudo sysctl net.bridge.bridge-nf-call-iptables=1 && exit"
+    & minikube ssh -n minikube-m02 "sudo sysctl net.bridge.bridge-nf-call-iptables=1 && exit"
+
     # configure Flannel CNI for Windows
     # make sure the flannel daemon set is restarted to reflect the new Windows-specific configuration
     & kubectl apply -f "..\kube-flannel.yaml"
