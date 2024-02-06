@@ -16,7 +16,7 @@ function Install-Kubelet {
     $KubeletUrl = "https://dl.k8s.io/$KubernetesVersion/bin/windows/amd64/kubelet.exe"
 
     # Download kubelet
-    Invoke-WebRequest -Uri $KubeletUrl -OutFile "c:\k\kubelet.exe"
+    Invoke-WebRequest -Uri $KubeletUrl -OutFile "c:\k\kubelet.exe" | Out-Null
 
     # Create the Start-kubelet.ps1 script
     @"
@@ -38,9 +38,9 @@ Invoke-Expression `$kubeletCommandLine
 "@ | Set-Content -Path "c:\k\Start-kubelet.ps1"
 
     # Install kubelet as a Windows service
-    c:\k\nssm.exe install kubelet Powershell -ExecutionPolicy Bypass -NoProfile c:\k\Start-kubelet.ps1
-    c:\k\nssm.exe set Kubelet AppStdout C:\k\kubelet.log
-    c:\k\nssm.exe set Kubelet AppStderr C:\k\kubelet.err.log
+    c:\k\nssm.exe install kubelet Powershell -ExecutionPolicy Bypass -NoProfile c:\k\Start-kubelet.ps1 | Out-Null
+    c:\k\nssm.exe set Kubelet AppStdout C:\k\kubelet.log | Out-Null
+    c:\k\nssm.exe set Kubelet AppStderr C:\k\kubelet.err.log | Out-Null
 }
 
 function Set-Port {
@@ -50,7 +50,7 @@ function Set-Port {
         return
     }
 
-    New-NetFirewallRule -Name 'kubelet' -DisplayName 'kubelet' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 10250
+    New-NetFirewallRule -Name 'kubelet' -DisplayName 'kubelet' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 10250 | Out-Null
 }
 
 function Get-Kubeadm {
@@ -59,8 +59,8 @@ function Get-Kubeadm {
         [ValidateNotNullOrEmpty()]
         $KubernetesVersion = "v1.27.3"
     )
-    curl.exe -L https://dl.k8s.io/$KubernetesVersion/bin/windows/amd64/kubeadm.exe -o c:\k\kubeadm.exe
-    Set-Location c:\k
+    curl.exe -L https://dl.k8s.io/$KubernetesVersion/bin/windows/amd64/kubeadm.exe -o c:\k\kubeadm.exe | Out-Null
+    Set-Location c:\k | Out-Null
 }
 
 

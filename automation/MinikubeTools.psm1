@@ -34,23 +34,24 @@ function Get-JoinCommand {
         [ValidateNotNullOrEmpty()]
         $Version = "v1.27.3"
     )
-    $JoinCommand = (minikube ssh "cd /var/lib/minikube/binaries/v1.27.3/ && sudo ./kubeadm token create --print-join-command") 
+    $JoinCommand = (minikube ssh "cd /var/lib/minikube/binaries/v1.27.3/ && sudo ./kubeadm token create --print-join-command") >> logs
     $outputString = $JoinCommand -replace 'kubeadm', '.\kubeadm'
     $outputString += ' --cri-socket "npipe:////./pipe/containerd-containerd"'
     $outputString += ' --v=5'
-    Write-Host $outputString
+    # Write-Host $outputString
+    # write this to a log file
     return $outputString
 
 }
 
 function Set-MinikubeFolderError {
     if (!(Test-Path -Path c:\var\lib\minikube\certs)) {
-        mkdir c:\var\lib\minikube\certs
+        mkdir c:\var\lib\minikube\certs | Out-Null
     }
 
     if (Test-Path -Path C:\etc\kubernetes\pki\ca.crt) {
-        Copy-Item C:\etc\kubernetes\pki\ca.crt -Destination C:\var\lib\Minikube\Certs
-        Remove-Item C:\etc\kubernetes\pki\ca.crt
+        Copy-Item C:\etc\kubernetes\pki\ca.crt -Destination C:\var\lib\Minikube\Certs | Out-Null
+        Remove-Item C:\etc\kubernetes\pki\ca.crt | Out-Null
     } else {
         Write-Output "File C:\etc\kubernetes\pki\ca.crt does not exist."
     }
@@ -68,9 +69,9 @@ function Add-Host {
 
     $entry = "`t$IP`tcontrol-plane.minikube.internal"
 
-    $hostsContent = Get-Content -Path $Path -Raw
+    $hostsContent = Get-Content -Path $Path -Raw -ErrorAction SilentlyContinue
     if ($hostsContent -notmatch [regex]::Escape($entry)) {
-        Add-Content -Path $Path -Value "$entry" -Force
+        Add-Content -Path $Path -Value "$entry" -Force | Out-Null
     }
 }
 
