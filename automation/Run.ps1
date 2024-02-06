@@ -68,7 +68,7 @@ function Run {
 
 
     $commandString = "minikube ip"
-    $IP = Invoke-Expression -Command $commandString | Out-Null
+    $IP = Invoke-Expression -Command $commandString 
 
     $ScriptBlock = { 
         [CmdletBinding()]
@@ -117,11 +117,11 @@ function Run {
     Invoke-Command -VMName $VMName -Credential $Credential -ScriptBlock $ScriptBlock -ArgumentList $JoinCommand
 
     # validate windows node successfully join
-    & kubectl get nodes -o wide
+    & kubectl get nodes -o wide >> logs
 
     # configure flannel and kube-proxy on the windows node
-    & kubectl apply -f "..\flannel-overlay.yaml"
-    & kubectl apply -f "..\kube-proxy.yaml"
+    & kubectl apply -f "..\flannel-overlay.yaml" >> logs
+    & kubectl apply -f "..\kube-proxy.yaml" >> logs
 
     # check the status of the windows node
     & kubectl get nodes -o wide

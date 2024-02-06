@@ -34,7 +34,7 @@ function Get-JoinCommand {
         [ValidateNotNullOrEmpty()]
         $Version = "v1.27.3"
     )
-    $JoinCommand = (minikube ssh "cd /var/lib/minikube/binaries/v1.27.3/ && sudo ./kubeadm token create --print-join-command") >> logs
+    $JoinCommand = (minikube ssh "cd /var/lib/minikube/binaries/v1.27.3/ && sudo ./kubeadm token create --print-join-command")
     $outputString = $JoinCommand -replace 'kubeadm', '.\kubeadm'
     $outputString += ' --cri-socket "npipe:////./pipe/containerd-containerd"'
     $outputString += ' --v=5'

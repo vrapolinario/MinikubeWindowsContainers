@@ -29,7 +29,7 @@ function Install-Containerd {
     $containerdTarFile = "containerd-${version}-windows-amd64.tar.gz"
     try {
         $Uri = "https://github.com/containerd/containerd/releases/download/v$version/$($containerdTarFile)"
-        Invoke-WebRequest -Uri $Uri -OutFile $DownloadPath\$containerdTarFile -Verbose
+        Invoke-WebRequest -Uri $Uri -OutFile $DownloadPath\$containerdTarFile -Verbose | Out-Null
     }
     catch {
         Throw "Containerd download failed. $_"
@@ -49,7 +49,7 @@ function Install-Containerd {
     Install-RequiredFeature @params
 
     Write-Output "Containerd v$version successfully installed at $InstallPath"
-    containerd.exe -v
+    containerd.exe -v | Out-Null
 
     Write-Output "For containerd usage: run 'containerd -h'"
 }
@@ -140,9 +140,9 @@ function Initialize-ContainerdService {
     if ($replacementsMade) {
         $containerdConfigContent | Set-Content -Path $containerdConfigFile
         # Output a message indicating the changes
-        Write-Host "Changes applied to $containerdConfigFile"
+        # Write-Host "Changes applied to $containerdConfigFile"
         } else {
-        Write-Host "No changes needed in $containerdConfigFile"
+        # Write-Host "No changes needed in $containerdConfigFile"
     }
 
      # Create the folders if they do not exist
@@ -151,12 +151,12 @@ function Initialize-ContainerdService {
 
     if (!(Test-Path $binDir)) {
         mkdir $binDir | Out-Null
-        Write-Host "Created $binDir"
+        # Write-Host "Created $binDir"
     }
 
     if (!(Test-Path $confDir)) {
         mkdir $confDir | Out-Null
-        Write-Host "Created $confDir"
+        # Write-Host "Created $confDir"
     }
 
 
@@ -177,7 +177,7 @@ function Initialize-ContainerdService {
         Write-Host "Containerd service is already registered."
     }
 
-    Get-Service *containerd* | Select-Object Name, DisplayName, ServiceName, ServiceType, StartupType, Status, RequiredServices, ServicesDependedOn
+    Get-Service *containerd* | Select-Object Name, DisplayName, ServiceName, ServiceType, StartupType, Status, RequiredServices, ServicesDependedOn | Out-Null
 }
 
 function Uninstall-Containerd {
