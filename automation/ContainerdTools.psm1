@@ -22,14 +22,15 @@ function Install-Containerd {
     $Version = Get-ContainerdLatestVersion
 
     $Version = $Version.TrimStart('v')
-    Write-Output "Downloading and installing Containerd v$version at $InstallPath"
+    Write-Output "* Downloading and installing Containerd v$version at $InstallPath"
+    "Downloading and installing Containerd v$version at $InstallPath" >> logs
 
     
     # Download file from repo
     $containerdTarFile = "containerd-${version}-windows-amd64.tar.gz"
     try {
         $Uri = "https://github.com/containerd/containerd/releases/download/v$version/$($containerdTarFile)"
-        Invoke-WebRequest -Uri $Uri -OutFile $DownloadPath\$containerdTarFile -Verbose | Out-Null
+        Invoke-WebRequest -Uri $Uri -OutFile $DownloadPath\$containerdTarFile | Out-Null
     }
     catch {
         Throw "Containerd download failed. $_"
@@ -46,12 +47,13 @@ function Install-Containerd {
     }
 
     
-    Install-RequiredFeature @params
+    Install-RequiredFeature @params | Out-Null
 
-    Write-Output "Containerd v$version successfully installed at $InstallPath"
-    containerd.exe -v | Out-Null
+    Write-Output "* Containerd v$version successfully installed at $InstallPath"
+    "Containerd v$version successfully installed at $InstallPath" >> logs
+    containerd.exe -v >> logs
 
-    Write-Output "For containerd usage: run 'containerd -h'"
+    "For containerd usage: run 'containerd -h'" >> logs
 }
 
 function Start-ContainerdService {
@@ -66,12 +68,16 @@ function Start-ContainerdService {
         Throw "Couldn't start Containerd service. $_"
     } 
 
+    Write-Output "* Containerd is installed and the service is started  ..."
+    "Containerd is installed and the service is started" >> logs
+
 }
 
 function Stop-ContainerdService {
     $containerdStatus = Get-Service containerd -ErrorAction SilentlyContinue
     if (!$containerdStatus) {
         Write-Warning "Containerd service does not exist as an installed service."
+        "Containerd service does not exist as an installed service." >> logs
         return
     }
 
@@ -93,7 +99,7 @@ function Initialize-ContainerdService {
         $ContainerdPath = "$Env:ProgramFiles\containerd"
     )
 
-    Write-Output "Configuring the containerd service"
+    "Configuring the containerd service" >> logs
 
     #Configure containerd service
     $containerdConfigFile = "$ContainerdPath\config.toml"

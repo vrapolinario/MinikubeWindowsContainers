@@ -90,7 +90,7 @@ function Add-FeatureToPath {
     $currPath = (Get-ItemProperty -Path $envPathRegKey -Name path).path
     $currPath = ParsePathString -PathString $currPath
     if (!($currPath -like "*$feature*")) {
-        Write-Information -InformationAction Continue -MessageData "Adding $feature to Environment Path RegKey"
+        # Write-Information -InformationAction Continue -MessageData "Adding $feature to Environment Path RegKey"
 
         # Add to reg key
         Set-ItemProperty -Path $envPathRegKey -Name PATH -Value "$currPath;$path"
@@ -98,7 +98,7 @@ function Add-FeatureToPath {
 
     $currPath = ParsePathString -PathString $env:Path
     if (!($currPath -like "*$feature*")) {
-        Write-Information -InformationAction Continue -MessageData "Adding $feature to env path"
+        # Write-Information -InformationAction Continue -MessageData "Adding $feature to env path"
         # Add to env path
         [Environment]::SetEnvironmentVariable("Path", "$($env:path);$path", [System.EnvironmentVariableTarget]::Machine)
         $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine")

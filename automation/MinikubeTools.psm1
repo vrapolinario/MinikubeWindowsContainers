@@ -1,45 +1,15 @@
-function Start-Minikube {
-    param (
-        [string]
-        [ValidateNotNullOrEmpty()]
-        $SwitchName = "External VM Switch"
-    )
-    
-    minikube start --driver=hyperv --hyperv-virtual-switch=$SwitchName --nodes=2 --cni=flannel --container-runtime=containerd
-}
-
-function Get-LinuxMasterNodeIP {
-    $IP = minikube ip
-    return $IP
-    
-}
-
-function Set-Flannel {
-    param (
-        [string]
-        $NodeName 
-    )
-
-    if ($NodeName) {
-        minikube ssh "sudo sysctl net.bridge.bridge-nf-call-iptables=1 && exit"
-    } else {
-        minikube ssh -n $NodeName "sudo sysctl net.bridge.bridge-nf-call-iptables=1 && exit"
-    }
-
-}
+Import-Module -Name "$PSScriptRoot\k8Tools.psm1" -Force
 
 function Get-JoinCommand {
     param (
         [string]
-        [ValidateNotNullOrEmpty()]
-        $Version = "v1.27.3"
+        $KubernetesVersion
     )
-    $JoinCommand = (minikube ssh "cd /var/lib/minikube/binaries/v1.27.3/ && sudo ./kubeadm token create --print-join-command")
+    $JoinCommand = (minikube ssh "cd /var/lib/minikube/binaries/v$KubernetesVersion/ && sudo ./kubeadm token create --print-join-command") 
+    Write-Output "Join command: $JoinCommand"
     $outputString = $JoinCommand -replace 'kubeadm', '.\kubeadm'
     $outputString += ' --cri-socket "npipe:////./pipe/containerd-containerd"'
     $outputString += ' --v=5'
-    # Write-Host $outputString
-    # write this to a log file
     return $outputString
 
 }
@@ -75,11 +45,6 @@ function Add-Host {
     }
 }
 
-
-Export-ModuleMember -Function Start-Minikube
-Export-ModuleMember -Function Get-LinuxMasterNodeIP
-Export-ModuleMember -Function Set-Flannel
 Export-ModuleMember -Function Get-JoinCommand
-Export-ModuleMember -Function Invoke-RunCommand
 Export-ModuleMember -Function Set-MinikubeFolderError
 Export-ModuleMember -Function Add-Host

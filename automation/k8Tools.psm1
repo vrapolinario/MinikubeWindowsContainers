@@ -1,8 +1,14 @@
+Import-Module -Name "$PSScriptRoot\SetUpUtilities.psm1" -Force
+
+function Get-k8LatestVersion {
+    $latestVersion = Get-LatestToolVersion -Repository "kubernetes/kubernetes"
+    return $latestVersion
+}
+
 function Install-Kubelet {
     param (
         [string]
-        [ValidateNotNullOrEmpty()]
-        $KubernetesVersion = "v1.27.3"
+        $KubernetesVersion
     )
 
     # Check if kubelet service is already installed
@@ -13,10 +19,14 @@ function Install-Kubelet {
     }
 
     # Define the URL for kubelet download
-    $KubeletUrl = "https://dl.k8s.io/$KubernetesVersion/bin/windows/amd64/kubelet.exe"
+    $KubeletUrl = "https://dl.k8s.io/v$KubernetesVersion/bin/windows/amd64/kubelet.exe"
 
     # Download kubelet
-    Invoke-WebRequest -Uri $KubeletUrl -OutFile "c:\k\kubelet.exe" | Out-Null
+    try {
+        Invoke-WebRequest -Uri $KubeletUrl -OutFile "c:\k\kubelet.exe" | Out-Null
+    } catch {
+        Write-Error "Failed to download kubelet: $_"
+    }
 
     # Create the Start-kubelet.ps1 script
     @"
@@ -41,6 +51,8 @@ Invoke-Expression `$kubeletCommandLine
     c:\k\nssm.exe install kubelet Powershell -ExecutionPolicy Bypass -NoProfile c:\k\Start-kubelet.ps1 | Out-Null
     c:\k\nssm.exe set Kubelet AppStdout C:\k\kubelet.log | Out-Null
     c:\k\nssm.exe set Kubelet AppStderr C:\k\kubelet.err.log | Out-Null
+
+    Write-Output "* Kubelet is installed and the service is started  ..."
 }
 
 function Set-Port {
@@ -50,21 +62,33 @@ function Set-Port {
         return
     }
 
-    New-NetFirewallRule -Name 'kubelet' -DisplayName 'kubelet' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 10250 | Out-Null
+    $ruleParams = @{
+        Name = 'kubelet'
+        DisplayName = 'kubelet'
+        Enabled = "True"
+        Direction = 'Inbound'
+        Protocol = 'TCP'
+        Action = 'Allow'
+        LocalPort = 10250
+    }
+
+    New-NetFirewallRule @ruleParams | Out-Null
 }
 
 function Get-Kubeadm {
     param (
         [string]
-        [ValidateNotNullOrEmpty()]
-        $KubernetesVersion = "v1.27.3"
+        $KubernetesVersion
     )
-    curl.exe -L https://dl.k8s.io/$KubernetesVersion/bin/windows/amd64/kubeadm.exe -o c:\k\kubeadm.exe | Out-Null
-    Set-Location c:\k | Out-Null
+    try {
+        Invoke-WebRequest -Uri "https://dl.k8s.io/v$KubernetesVersion/bin/windows/amd64/kubeadm.exe" -OutFile "c:\k\kubeadm.exe" | Out-Null
+    } catch {
+        Write-Error "Failed to download kubeadm: $_"
+    }
 }
 
-
-# Example usage: Install-Kubelet -KubernetesVersion "v1.27.3"
+Export-ModuleMember -Function Get-k8LatestVersion
 Export-ModuleMember -Function Install-Kubelet
 Export-ModuleMember -Function Set-Port
 Export-ModuleMember -Function Get-Kubeadm
+Export-ModuleMember -Function Get-k8LatestVersion

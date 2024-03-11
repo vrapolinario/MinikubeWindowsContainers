@@ -1,5 +1,5 @@
-Import-Module -Name "$PSScriptRoot\ContainerdTools.psm1" -Force
 Import-Module -Name "$PSScriptRoot\k8Tools.psm1" -Force
+Import-Module -Name "$PSScriptRoot\ContainerdTools.psm1" -Force
 Import-Module -Name "$PSScriptRoot\MinikubeTools.psm1" -Force
 Import-Module -Name "$PSScriptRoot\NSSMTools.psm1" -Force
 
@@ -8,16 +8,18 @@ function Run {
         [string]$VMName,
         [string]$UserName,
         [string]$Pass,
-        [System.Management.Automation.PSCredential]$Credential
+        [System.Management.Automation.PSCredential]$Credential,
+        [string]$KubernetesVersion
     ) 
 
     # create and configure a new minikube cluster 
-    & minikube start --driver=hyperv --hyperv-virtual-switch=$SwitchName --nodes=2 --cni=flannel --container-runtime=containerd
+    Write-Output "* Creating and configuring a new minikube cluster ..."
+    & minikube start --driver=hyperv --hyperv-virtual-switch=$SwitchName --nodes=2 --cni=flannel --container-runtime=containerd --kubernetes-version=$KubernetesVersion
     # & minikube start --driver=hyperv --hyperv-virtual-switch=$SwitchName --memory=4096 --cpus=2 --kubernetes-version=v1.20.2 --network-plugin=cni --cni=flannel --container-runtime=containerd --disk-size=15GB --wait=false >> logs
     Write-Output "* Minikube cluster is created and configured  ..."
     # Prepare the Linux nodes for Windows-specific Flannel CNI configuration
     # at the moment we are assuming that you only have two linux nodes named minikube and minikube-m02
-    & minikube ssh "sudo sysctl net.bridge.bridge-nf-call-iptables=1 && exit" > logs
+    & minikube ssh "sudo sysctl net.bridge.bridge-nf-call-iptables=1 && exit" >> logs
     & minikube ssh -n minikube-m02 "sudo sysctl net.bridge.bridge-nf-call-iptables=1 && exit" >> logs
     Write-Output "* Linux nodes are ready for Windows-specific Flannel CNI configuration  ..."
 
@@ -52,22 +54,46 @@ function Run {
         Expand-Archive -Path $CompressedFilePath -DestinationPath $UncompressedFolderPath -Force
     }
 
+    Invoke-Command -VMName $VMName -Credential $Credential -ScriptBlock $ScriptBlock 
+
+    $ScriptBlock = { 
+        $UncompressedFolderPath = "C:\Users\Administrator\Documents\MinikubeWindowsContainers"
+        Import-Module -Name "$UncompressedFolderPath\automation\ContainerdTools.psm1" -Force
+
+        Install-Containerd
+        Initialize-ContainerdService
+        Start-ContainerdService
+
+        Exit-PSSession
+    }
     Invoke-Command -VMName $VMName -Credential $Credential -ScriptBlock $ScriptBlock
 
     $ScriptBlock = { 
         $UncompressedFolderPath = "C:\Users\Administrator\Documents\MinikubeWindowsContainers"
-        
-        Import-Module -Name "$UncompressedFolderPath\automation\ContainerdTools.psm1" -Force
-        Import-Module -Name "$UncompressedFolderPath\automation\k8Tools.psm1" -Force
-        Import-Module -Name "$UncompressedFolderPath\automation\MinikubeTools.psm1" -Force
         Import-Module -Name "$UncompressedFolderPath\automation\NSSMTools.psm1" -Force
-    
-        . "$UncompressedFolderPath\automation\InitNode.ps1"
+
+        Install-NSSM
 
         Exit-PSSession
     }
-
     Invoke-Command -VMName $VMName -Credential $Credential -ScriptBlock $ScriptBlock
+
+    $ScriptBlock = { 
+        [CmdletBinding()]
+        param (
+            [Parameter()]
+            [string]
+            $KubernetesVersion
+        )
+        $UncompressedFolderPath = "C:\Users\Administrator\Documents\MinikubeWindowsContainers"
+        Import-Module -Name "$UncompressedFolderPath\automation\k8Tools.psm1" -Force
+
+        Install-Kubelet -KubernetesVersion $KubernetesVersion
+        Set-Port
+
+        Exit-PSSession
+    }
+    Invoke-Command -VMName $VMName -Credential $Credential -ScriptBlock $ScriptBlock -ArgumentList $KubernetesVersion
 
 
     $commandString = "minikube ip"
@@ -92,40 +118,52 @@ function Run {
     Invoke-Command -VMName $VMName -Credential $Credential -ScriptBlock $ScriptBlock -ArgumentList $IP
     
 
-    $JoinCommand = Get-JoinCommand
+    $JoinCommand = Get-JoinCommand -Version $KubernetesVersion
 
     $ScriptBlock = { 
         [CmdletBinding()]
         param (
             [Parameter()]
             [string]
-            $JoinCommand
+            $JoinCommand,
+            
+            [Parameter()]
+            [string]
+            $KubernetesVersion
         )
         $UncompressedFolderPath = "C:\Users\Administrator\Documents\MinikubeWindowsContainers"
 
         Import-Module -Name "$UncompressedFolderPath\automation\MinikubeTools.psm1" -Force
         Import-Module -Name "$UncompressedFolderPath\automation\k8Tools.psm1" -Force
 
-        Get-Kubeadm
+        Write-Output "* Get-Kubeadm ..."
+        Get-Kubeadm -KubernetesVersion $KubernetesVersion
 
-        Invoke-Expression $JoinCommand
+
+        Set-Location -Path "C:\k"
+
+        Write-Output "* Joining the Windows node to the cluster ..."
+        Invoke-Expression "$JoinCommand >> logs 2>&1"
 
         Set-MinikubeFolderError
 
-        Invoke-Expression $JoinCommand
+        Invoke-Expression "$JoinCommand >> logs 2>&1"
 
         Exit-PSSession
     }
 
-    Invoke-Command -VMName $VMName -Credential $Credential -ScriptBlock $ScriptBlock -ArgumentList $JoinCommand
-
-    # validate windows node successfully join
-    & kubectl get nodes -o wide >> logs
+    Invoke-Command -VMName $VMName -Credential $Credential -ScriptBlock $ScriptBlock -ArgumentList $JoinCommand, $KubernetesVersion
 
     # configure flannel and kube-proxy on the windows node
     & kubectl apply -f "..\flannel-overlay.yaml" >> logs
     & kubectl apply -f "..\kube-proxy.yaml" >> logs
 
+    Write-Output "* Waiting for the node to come to a ready state ..."
+    Start-Sleep -Seconds 30
+
+    # validate windows node successfully join
+    & kubectl get nodes -o wide >> logs
+    
     # check the status of the windows node
     & kubectl get nodes -o wide
     Write-Output "* Windows node is successfully joined and configured  ..."

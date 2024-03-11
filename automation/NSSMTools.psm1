@@ -9,8 +9,17 @@ function Install-NSSM {
         mkdir "c:\k" | Out-Null
     }
     $arch = "win64"
-    curl.exe -L https://k8stestinfrabinaries.blob.core.windows.net/nssm-mirror/nssm-2.24.zip -o nssm.zip | Out-Null
-    tar.exe C c:\k\ -xvf .\nssm.zip --strip-components 2 */$arch/*.exe | Out-Null
+    $nssmZipFile = "nssm-2.24.zip"
+    $nssmUri = "https://k8stestinfrabinaries.blob.core.windows.net/nssm-mirror/$nssmZipFile"
+    try {
+        Invoke-WebRequest -Uri $nssmUri -OutFile "c:\k\$nssmZipFile" | Out-Null
+    }
+    catch {
+        Throw "NSSM download failed. $_"
+    }
+    tar.exe C c:\k\ -xf "c:\k\$nssmZipFile" --strip-components 2 */$arch/*.exe | Out-Null
+
+    Write-Output "* NSSM is installed  ..."
 }
 
 Export-ModuleMember -Function Install-NSSM
