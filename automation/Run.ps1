@@ -118,7 +118,7 @@ function Run {
     Invoke-Command -VMName $VMName -Credential $Credential -ScriptBlock $ScriptBlock -ArgumentList $IP
     
 
-    $JoinCommand = Get-JoinCommand -Version $KubernetesVersion
+    $JoinCommand = Get-JoinCommand -KubernetesVersion $KubernetesVersion
 
     $ScriptBlock = { 
         [CmdletBinding()]
@@ -136,13 +136,14 @@ function Run {
         Import-Module -Name "$UncompressedFolderPath\automation\MinikubeTools.psm1" -Force
         Import-Module -Name "$UncompressedFolderPath\automation\k8Tools.psm1" -Force
 
-        Write-Output "* Get-Kubeadm ..."
+        
         Get-Kubeadm -KubernetesVersion $KubernetesVersion
 
 
         Set-Location -Path "C:\k"
 
         Write-Output "* Joining the Windows node to the cluster ..."
+
         Invoke-Expression "$JoinCommand >> logs 2>&1"
 
         Set-MinikubeFolderError
@@ -159,7 +160,7 @@ function Run {
     & kubectl apply -f "..\kube-proxy.yaml" >> logs
 
     Write-Output "* Waiting for the node to come to a ready state ..."
-    Start-Sleep -Seconds 30
+    Start-Sleep -Seconds 40
 
     # validate windows node successfully join
     & kubectl get nodes -o wide >> logs

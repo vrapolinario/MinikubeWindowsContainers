@@ -6,8 +6,7 @@ function Get-JoinCommand {
         $KubernetesVersion
     )
     $JoinCommand = (minikube ssh "cd /var/lib/minikube/binaries/v$KubernetesVersion/ && sudo ./kubeadm token create --print-join-command") 
-    Write-Output "Join command: $JoinCommand"
-    $outputString = $JoinCommand -replace 'kubeadm', '.\kubeadm'
+    $outputString = $JoinCommand -replace 'kubeadm', '.\kubeadm.exe'
     $outputString += ' --cri-socket "npipe:////./pipe/containerd-containerd"'
     $outputString += ' --v=5'
     return $outputString

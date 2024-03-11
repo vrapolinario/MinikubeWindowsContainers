@@ -105,7 +105,7 @@ function Initialize-ContainerdService {
     $containerdConfigFile = "$ContainerdPath\config.toml"
     $containerdDefault = containerd.exe config default
     $containerdDefault | Out-File $ContainerdPath\config.toml -Encoding ascii
-    Write-Information -InformationAction Continue -MessageData "Review containerd configutations at $containerdConfigFile"
+    Write-Information -InformationAction Continue -MessageData "* Review containerd configutations at $containerdConfigFile ..."
 
     Add-MpPreference -ExclusionProcess "$ContainerdPath\containerd.exe"
 

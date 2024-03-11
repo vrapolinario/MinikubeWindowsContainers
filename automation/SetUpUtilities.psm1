@@ -35,7 +35,7 @@ function Install-RequiredFeature {
     )
     
     # Create the directory to untar to
-    Write-Information -InformationAction Continue -MessageData "Extracting $Feature to $InstallPath"
+    Write-Information -InformationAction Continue -MessageData "* Extracting $Feature to $InstallPath ..."
     if (!(Test-Path $InstallPath)) { 
         New-Item -ItemType Directory -Force -Path $InstallPath | Out-Null 
     }
