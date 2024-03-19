@@ -45,7 +45,7 @@ New-VM @VM | Out-Null
 Set-VM -Name $VMName -ProcessorCount 2 -AutomaticCheckpointsEnabled $false
 Set-VMProcessor -VMName $VMName -ExposeVirtualizationExtensions $true
 Set-VMDvdDrive -VMName $VMName -Path $ISOFilePath
-# Add-VMDvdDrive -VMName $VMName -Path "$PSScriptRoot\auto-install.iso" -ControllerNumber 1 -ControllerLocation 1
+Add-VMDvdDrive -VMName $VMName -Path "..\auto-install.iso" -ControllerNumber 1 -ControllerLocation 1
 Start-VM -Name $VMName | Out-Null
 
 

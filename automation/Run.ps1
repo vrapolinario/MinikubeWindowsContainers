@@ -40,7 +40,9 @@ function Run {
     $LocalScriptsPath = Split-Path -Path $CurrrentDirectory -Parent
     $CompressedFilePath = "$LocalScriptsPath\MinikubeWindowsContainers.zip" 
 
-    Compress-Archive -Path $LocalScriptsPath -DestinationPath $CompressedFilePath -Force
+    # 'auto-install.iso' is not being compressed since another process will be using it
+    # hack way of compressing the error but it works, needs exploration
+    Compress-Archive -Path $LocalScriptsPath -DestinationPath $CompressedFilePath -Force 2>$null
 
     $RemoteScriptsPath = "C:\Users\Administrator\Documents" 
 
