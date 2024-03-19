@@ -208,7 +208,7 @@ You will need to append the IP address of the master node to the Hosts file on t
 > You can find the IP address of the master Linux node by running the following command on your machine:
 >
 >```powershell
->minikube node list
+>minikube ip
 >```
 
 Your hosts file should look similar to this:
